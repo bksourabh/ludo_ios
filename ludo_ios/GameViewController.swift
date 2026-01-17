@@ -126,6 +126,15 @@ extension GameViewController: MenuSceneDelegate {
     func menuSceneRequestsGameCenterAuth() {
         authenticateGameCenter()
     }
+
+    func menuSceneRequestsGuestLogin() {
+        GameManager.shared.loginAsGuest()
+
+        // Refresh menu
+        if let menuScene = skView.scene as? MenuScene {
+            menuScene.refreshAuthState()
+        }
+    }
 }
 
 // MARK: - GameSceneDelegate
@@ -155,6 +164,15 @@ extension GameViewController: ASAuthorizationControllerDelegate {
 
     func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
         GameManager.shared.handleAppleSignInError(error)
+
+        // Show error alert to user
+        let alert = UIAlertController(
+            title: "Sign In Failed",
+            message: "Could not sign in with Apple. You can try again or continue as a guest.\n\nError: \(error.localizedDescription)",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
     }
 }
 

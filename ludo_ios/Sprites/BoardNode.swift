@@ -289,20 +289,13 @@ class BoardNode: SKNode {
 
     private func drawYardCircles() {
         // Draw circles in each yard where tokens start
-        // These positions must match exactly with LudoBoard.yardTokenGridPositions
-        let yardPositions: [(positions: [(col: Int, row: Int)], color: PlayerColor)] = [
-            ([(2, 2), (4, 2), (2, 4), (4, 4)], .red),
-            ([(2, 10), (4, 10), (2, 12), (4, 12)], .green),
-            ([(10, 10), (12, 10), (10, 12), (12, 12)], .yellow),
-            ([(10, 2), (12, 2), (10, 4), (12, 4)], .blue)
-        ]
-
+        // Use LudoBoard's calculated positions to ensure perfect alignment
         let circleRadius = cellSize * 0.38
 
-        for (positions, color) in yardPositions {
-            for (col, row) in positions {
-                let pos = gridToScreen(col: col, row: row)
+        for color in PlayerColor.allCases {
+            let positions = ludoBoard.yardCirclePositions(for: color)
 
+            for pos in positions {
                 let circle = SKShapeNode(circleOfRadius: circleRadius)
                 circle.position = pos
                 circle.fillColor = color.lightColor

@@ -10,8 +10,14 @@ class GameManager: NSObject, ObservableObject {
     // Authentication state
     @Published var isSignedInWithApple: Bool = false
     @Published var isGameCenterAuthenticated: Bool = false
+    @Published var isGuestUser: Bool = false
     @Published var playerName: String = "Player"
     @Published var appleUserID: String?
+
+    /// Check if user is logged in (Apple, Game Center, or Guest)
+    var isLoggedIn: Bool {
+        return isSignedInWithApple || isGameCenterAuthenticated || isGuestUser
+    }
 
     // Game Center player
     var localPlayer: GKLocalPlayer {
@@ -21,6 +27,7 @@ class GameManager: NSObject, ObservableObject {
     private override init() {
         super.init()
         checkExistingAppleSignIn()
+        checkExistingGuestSession()
     }
 
     // MARK: - Sign in with Apple
@@ -83,6 +90,23 @@ class GameManager: NSObject, ObservableObject {
     func handleAppleSignInError(_ error: Error) {
         print("Sign in with Apple failed: \(error.localizedDescription)")
         isSignedInWithApple = false
+    }
+
+    // MARK: - Guest Login
+
+    /// Login as guest
+    func loginAsGuest() {
+        isGuestUser = true
+        playerName = "Guest"
+        UserDefaults.standard.set(true, forKey: "isGuestUser")
+    }
+
+    /// Check for existing guest session
+    private func checkExistingGuestSession() {
+        if UserDefaults.standard.bool(forKey: "isGuestUser") {
+            isGuestUser = true
+            playerName = "Guest"
+        }
     }
 
     // MARK: - Game Center

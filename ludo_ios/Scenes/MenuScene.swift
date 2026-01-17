@@ -7,6 +7,7 @@ protocol MenuSceneDelegate: AnyObject {
     func menuSceneDidStartGame(with config: GameConfig)
     func menuSceneRequestsAppleSignIn()
     func menuSceneRequestsGameCenterAuth()
+    func menuSceneRequestsGuestLogin()
 }
 
 /// Main menu scene for game setup
@@ -14,13 +15,30 @@ class MenuScene: SKScene {
 
     weak var menuDelegate: MenuSceneDelegate?
 
-    // UI Elements
-    private var titleLabel: SKLabelNode!
+    // Scene state
+    private var isLoggedIn: Bool {
+        return GameManager.shared.isLoggedIn
+    }
+
+    // UI Containers
+    private var loginContainer: SKNode!
+    private var gameSetupContainer: SKNode!
+
+    // Login UI Elements
+    private var logoSprite: SKSpriteNode!
+    private var signInButton: SKShapeNode!
+    private var signInLabel: SKLabelNode!
+    private var guestButton: SKShapeNode!
+    private var guestLabel: SKLabelNode!
+
+    // Game Setup UI Elements
     private var playerButtons: [PlayerColor: SKShapeNode] = [:]
     private var playerLabels: [PlayerColor: SKLabelNode] = [:]
+    private var colorLabels: [PlayerColor: SKLabelNode] = [:]
     private var startButton: SKShapeNode!
-    private var signInButton: SKShapeNode?
-    private var playerNameLabel: SKLabelNode!
+    private var startButtonLabel: SKLabelNode!
+    private var welcomeLabel: SKLabelNode!
+    private var subtitleLabel: SKLabelNode!
 
     // Game configuration
     private var gameConfig = GameConfig()
@@ -31,48 +49,133 @@ class MenuScene: SKScene {
 
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1.0)
-        setupUI()
-        updateAuthUI()
+        setupLoginUI()
+        setupGameSetupUI()
+        updateVisibility()
     }
 
-    private func setupUI() {
-        // Title
-        titleLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        titleLabel.text = "LUDO"
-        titleLabel.fontSize = 48
-        titleLabel.fontColor = .white
-        titleLabel.position = CGPoint(x: 0, y: size.height * 0.35)
-        addChild(titleLabel)
+    // MARK: - Login UI
+
+    private func setupLoginUI() {
+        loginContainer = SKNode()
+        addChild(loginContainer)
+
+        // Logo image
+        if let logoTexture = SKTexture(imageNamed: "LudoLogo") as SKTexture? {
+            logoSprite = SKSpriteNode(texture: logoTexture)
+            let maxWidth = size.width * 0.6
+            let maxHeight = size.height * 0.3
+            let scale = min(maxWidth / logoSprite.size.width, maxHeight / logoSprite.size.height)
+            logoSprite.setScale(scale)
+            logoSprite.position = CGPoint(x: 0, y: size.height * 0.15)
+            loginContainer.addChild(logoSprite)
+        } else {
+            // Fallback text if logo not found
+            let titleLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+            titleLabel.text = "LUDO"
+            titleLabel.fontSize = 64
+            titleLabel.fontColor = .white
+            titleLabel.position = CGPoint(x: 0, y: size.height * 0.15)
+            loginContainer.addChild(titleLabel)
+        }
+
+        // Welcome message
+        let welcomeText = SKLabelNode(fontNamed: "Helvetica")
+        welcomeText.text = "Sign in to play"
+        welcomeText.fontSize = 20
+        welcomeText.fontColor = SKColor(white: 0.7, alpha: 1.0)
+        welcomeText.position = CGPoint(x: 0, y: -size.height * 0.05)
+        loginContainer.addChild(welcomeText)
+
+        // Sign in with Apple button
+        let buttonWidth = size.width * 0.65
+        let buttonHeight: CGFloat = 50
+
+        signInButton = SKShapeNode(rectOf: CGSize(width: buttonWidth, height: buttonHeight), cornerRadius: 8)
+        signInButton.position = CGPoint(x: 0, y: -size.height * 0.15)
+        signInButton.fillColor = .black
+        signInButton.strokeColor = .white
+        signInButton.lineWidth = 2
+        signInButton.name = "signInButton"
+        loginContainer.addChild(signInButton)
+
+        signInLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        signInLabel.text = " Sign in with Apple"
+        signInLabel.fontSize = 18
+        signInLabel.fontColor = .white
+        signInLabel.verticalAlignmentMode = .center
+        signInLabel.position = CGPoint(x: 0, y: -size.height * 0.15)
+        loginContainer.addChild(signInLabel)
+
+        // "or" separator
+        let orLabel = SKLabelNode(fontNamed: "Helvetica")
+        orLabel.text = "or"
+        orLabel.fontSize = 16
+        orLabel.fontColor = SKColor(white: 0.5, alpha: 1.0)
+        orLabel.position = CGPoint(x: 0, y: -size.height * 0.22)
+        loginContainer.addChild(orLabel)
+
+        // Continue as Guest button
+        guestButton = SKShapeNode(rectOf: CGSize(width: buttonWidth, height: buttonHeight), cornerRadius: 8)
+        guestButton.position = CGPoint(x: 0, y: -size.height * 0.29)
+        guestButton.fillColor = SKColor(red: 0.2, green: 0.2, blue: 0.25, alpha: 1.0)
+        guestButton.strokeColor = SKColor(white: 0.4, alpha: 1.0)
+        guestButton.lineWidth = 1
+        guestButton.name = "guestButton"
+        loginContainer.addChild(guestButton)
+
+        guestLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        guestLabel.text = "Continue as Guest"
+        guestLabel.fontSize = 18
+        guestLabel.fontColor = .white
+        guestLabel.verticalAlignmentMode = .center
+        guestLabel.position = CGPoint(x: 0, y: -size.height * 0.29)
+        loginContainer.addChild(guestLabel)
+    }
+
+    // MARK: - Game Setup UI
+
+    private func setupGameSetupUI() {
+        gameSetupContainer = SKNode()
+        addChild(gameSetupContainer)
+
+        // Logo (smaller, at top)
+        if let logoTexture = SKTexture(imageNamed: "LudoLogo") as SKTexture? {
+            let smallLogo = SKSpriteNode(texture: logoTexture)
+            let maxWidth = size.width * 0.35
+            let maxHeight = size.height * 0.12
+            let scale = min(maxWidth / smallLogo.size.width, maxHeight / smallLogo.size.height)
+            smallLogo.setScale(scale)
+            smallLogo.position = CGPoint(x: 0, y: size.height * 0.38)
+            gameSetupContainer.addChild(smallLogo)
+        }
+
+        // Welcome label
+        welcomeLabel = SKLabelNode(fontNamed: "Helvetica")
+        welcomeLabel.fontSize = 16
+        welcomeLabel.fontColor = SKColor(white: 0.6, alpha: 1.0)
+        welcomeLabel.position = CGPoint(x: 0, y: size.height * 0.30)
+        gameSetupContainer.addChild(welcomeLabel)
 
         // Subtitle
-        let subtitleLabel = SKLabelNode(fontNamed: "Helvetica")
+        subtitleLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
         subtitleLabel.text = "Select Players"
-        subtitleLabel.fontSize = 20
-        subtitleLabel.fontColor = SKColor(white: 0.7, alpha: 1.0)
-        subtitleLabel.position = CGPoint(x: 0, y: size.height * 0.28)
-        addChild(subtitleLabel)
-
-        // Player name label
-        playerNameLabel = SKLabelNode(fontNamed: "Helvetica")
-        playerNameLabel.fontSize = 16
-        playerNameLabel.fontColor = SKColor(white: 0.6, alpha: 1.0)
-        playerNameLabel.position = CGPoint(x: 0, y: size.height * 0.40)
-        addChild(playerNameLabel)
+        subtitleLabel.fontSize = 22
+        subtitleLabel.fontColor = .white
+        subtitleLabel.position = CGPoint(x: 0, y: size.height * 0.22)
+        gameSetupContainer.addChild(subtitleLabel)
 
         // Player selection buttons
         setupPlayerButtons()
 
         // Start game button
         setupStartButton()
-
-        // Sign in button
-        setupSignInButton()
     }
 
     private func setupPlayerButtons() {
         let colors: [PlayerColor] = [.red, .green, .yellow, .blue]
-        let startY = size.height * 0.12
-        let buttonWidth = size.width * 0.7
+        let startY = size.height * 0.10
+        let buttonWidth = size.width * 0.75
 
         for (index, color) in colors.enumerated() {
             let yPos = startY - CGFloat(index) * (buttonHeight + buttonSpacing)
@@ -84,7 +187,7 @@ class MenuScene: SKScene {
             button.strokeColor = color.color
             button.lineWidth = 2
             button.name = "playerButton_\(color.rawValue)"
-            addChild(button)
+            gameSetupContainer.addChild(button)
             playerButtons[color] = button
 
             // Color name label (left side)
@@ -95,7 +198,8 @@ class MenuScene: SKScene {
             colorLabel.horizontalAlignmentMode = .left
             colorLabel.verticalAlignmentMode = .center
             colorLabel.position = CGPoint(x: -buttonWidth/2 + 20, y: yPos)
-            addChild(colorLabel)
+            gameSetupContainer.addChild(colorLabel)
+            colorLabels[color] = colorLabel
 
             // Player type label (right side)
             let typeLabel = SKLabelNode(fontNamed: "Helvetica")
@@ -104,7 +208,7 @@ class MenuScene: SKScene {
             typeLabel.horizontalAlignmentMode = .right
             typeLabel.verticalAlignmentMode = .center
             typeLabel.position = CGPoint(x: buttonWidth/2 - 20, y: yPos)
-            addChild(typeLabel)
+            gameSetupContainer.addChild(typeLabel)
             playerLabels[color] = typeLabel
 
             updatePlayerButton(color)
@@ -121,38 +225,28 @@ class MenuScene: SKScene {
         startButton.strokeColor = SKColor(red: 0.3, green: 0.85, blue: 0.4, alpha: 1.0)
         startButton.lineWidth = 2
         startButton.name = "startButton"
-        addChild(startButton)
+        gameSetupContainer.addChild(startButton)
 
-        let startLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
-        startLabel.text = "START GAME"
-        startLabel.fontSize = 22
-        startLabel.fontColor = .white
-        startLabel.verticalAlignmentMode = .center
-        startLabel.position = CGPoint(x: 0, y: -size.height * 0.28)
-        addChild(startLabel)
+        startButtonLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        startButtonLabel.text = "START GAME"
+        startButtonLabel.fontSize = 22
+        startButtonLabel.fontColor = .white
+        startButtonLabel.verticalAlignmentMode = .center
+        startButtonLabel.position = CGPoint(x: 0, y: -size.height * 0.28)
+        gameSetupContainer.addChild(startButtonLabel)
     }
 
-    private func setupSignInButton() {
-        let buttonWidth = size.width * 0.5
-        let buttonHeight: CGFloat = 44
+    // MARK: - UI Updates
 
-        let button = SKShapeNode(rectOf: CGSize(width: buttonWidth, height: buttonHeight), cornerRadius: 8)
-        button.position = CGPoint(x: 0, y: -size.height * 0.38)
-        button.fillColor = .black
-        button.strokeColor = .white
-        button.lineWidth = 1
-        button.name = "signInButton"
-        addChild(button)
-        signInButton = button
-
-        let appleIcon = SKLabelNode(fontNamed: "Helvetica")
-        appleIcon.text = " Sign in with Apple"
-        appleIcon.fontSize = 16
-        appleIcon.fontColor = .white
-        appleIcon.verticalAlignmentMode = .center
-        appleIcon.position = CGPoint(x: 0, y: -size.height * 0.38)
-        appleIcon.name = "signInLabel"
-        addChild(appleIcon)
+    private func updateVisibility() {
+        if isLoggedIn {
+            loginContainer.isHidden = true
+            gameSetupContainer.isHidden = false
+            welcomeLabel.text = "Welcome, \(GameManager.shared.playerName)!"
+        } else {
+            loginContainer.isHidden = false
+            gameSetupContainer.isHidden = true
+        }
     }
 
     private func updatePlayerButton(_ color: PlayerColor) {
@@ -160,26 +254,12 @@ class MenuScene: SKScene {
               let button = playerButtons[color] else { return }
 
         let isHuman = gameConfig.isHuman(color)
-        label.text = isHuman ? "👤 Human" : "🤖 Computer"
+        label.text = isHuman ? "Human" : "Computer"
 
         // Update button appearance
         button.fillColor = isHuman ?
             color.color.withAlphaComponent(0.5) :
             color.color.withAlphaComponent(0.2)
-    }
-
-    private func updateAuthUI() {
-        let manager = GameManager.shared
-
-        if manager.isSignedInWithApple || manager.isGameCenterAuthenticated {
-            playerNameLabel.text = "Welcome, \(manager.playerName)!"
-            signInButton?.isHidden = true
-            childNode(withName: "signInLabel")?.isHidden = true
-        } else {
-            playerNameLabel.text = ""
-            signInButton?.isHidden = false
-            childNode(withName: "signInLabel")?.isHidden = false
-        }
     }
 
     private func togglePlayerType(_ color: PlayerColor) {
@@ -211,29 +291,37 @@ class MenuScene: SKScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        // Check player buttons
-        for color in PlayerColor.allCases {
-            if let button = playerButtons[color], button.contains(location) {
-                togglePlayerType(color)
+        if !isLoggedIn {
+            // Login screen - check sign in button
+            if signInButton.contains(location) {
+                animateButtonPress(signInButton) { [weak self] in
+                    self?.menuDelegate?.menuSceneRequestsAppleSignIn()
+                }
                 return
             }
-        }
 
-        // Check start button
-        if startButton.contains(location) {
-            animateButtonPress(startButton) { [weak self] in
-                guard let self = self else { return }
-                self.menuDelegate?.menuSceneDidStartGame(with: self.gameConfig)
+            // Check guest button
+            if guestButton.contains(location) {
+                animateButtonPress(guestButton) { [weak self] in
+                    self?.menuDelegate?.menuSceneRequestsGuestLogin()
+                }
+                return
             }
-            return
-        }
+        } else {
+            // Game setup screen - check player buttons and start button
+            for color in PlayerColor.allCases {
+                if let button = playerButtons[color], button.contains(location) {
+                    togglePlayerType(color)
+                    return
+                }
+            }
 
-        // Check sign in button
-        if let signInBtn = signInButton, signInBtn.contains(location) {
-            animateButtonPress(signInBtn) { [weak self] in
-                self?.menuDelegate?.menuSceneRequestsAppleSignIn()
+            if startButton.contains(location) {
+                animateButtonPress(startButton) { [weak self] in
+                    guard let self = self else { return }
+                    self.menuDelegate?.menuSceneDidStartGame(with: self.gameConfig)
+                }
             }
-            return
         }
     }
 
@@ -249,6 +337,6 @@ class MenuScene: SKScene {
 
     /// Refresh UI after authentication changes
     func refreshAuthState() {
-        updateAuthUI()
+        updateVisibility()
     }
 }

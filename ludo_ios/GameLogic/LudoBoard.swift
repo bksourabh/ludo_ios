@@ -120,31 +120,49 @@ class LudoBoard {
 
     // MARK: - Yard Positions
 
-    /// Get screen positions for the 4 tokens in a yard
+    /// Get screen positions for the 4 tokens in a yard (perfectly centered in inner white box)
     func yardPositions(for color: PlayerColor) -> [CGPoint] {
-        // Get the 4 token positions as grid coordinates
-        let positions = yardTokenGridPositions(for: color)
-        return positions.map { gridToScreen(col: $0.col, row: $0.row) }
+        let center = yardInnerCenter(for: color)
+        let offset = cellSize * 1.1  // Distance from center to each token
+
+        return [
+            CGPoint(x: center.x - offset, y: center.y - offset),  // Bottom-left
+            CGPoint(x: center.x + offset, y: center.y - offset),  // Bottom-right
+            CGPoint(x: center.x - offset, y: center.y + offset),  // Top-left
+            CGPoint(x: center.x + offset, y: center.y + offset)   // Top-right
+        ]
     }
 
-    /// Get the 4 grid positions for tokens in a yard
-    private func yardTokenGridPositions(for color: PlayerColor) -> [(col: Int, row: Int)] {
-        // Tokens are placed in a 2x2 pattern within the inner white area
-        // The inner white area has ~0.8 cell margin, so tokens at positions +/-1 from center
+    /// Get the center point of the inner white box for a yard
+    private func yardInnerCenter(for color: PlayerColor) -> CGPoint {
+        // Each yard is 6x6 cells with 0.8 cell margin
+        // Inner box center is at 3.0 cells from yard corner
+        let yardCorner: (col: CGFloat, row: CGFloat)
+
         switch color {
         case .red:
-            // Red yard: cols 0-5, rows 0-5, inner area roughly cols 1-4, rows 1-4
-            return [(2, 2), (4, 2), (2, 4), (4, 4)]
+            yardCorner = (0, 0)
         case .green:
-            // Green yard: cols 0-5, rows 9-14, inner area roughly cols 1-4, rows 10-13
-            return [(2, 10), (4, 10), (2, 12), (4, 12)]
+            yardCorner = (0, 9)
         case .yellow:
-            // Yellow yard: cols 9-14, rows 9-14, inner area roughly cols 10-13, rows 10-13
-            return [(10, 10), (12, 10), (10, 12), (12, 12)]
+            yardCorner = (9, 9)
         case .blue:
-            // Blue yard: cols 9-14, rows 0-5, inner area roughly cols 10-13, rows 1-4
-            return [(10, 2), (12, 2), (10, 4), (12, 4)]
+            yardCorner = (9, 0)
         }
+
+        // Center of inner box is 3.0 cells from yard corner
+        let centerCol = yardCorner.col + 3.0
+        let centerRow = yardCorner.row + 3.0
+
+        return CGPoint(
+            x: origin.x + centerCol * cellSize,
+            y: origin.y + centerRow * cellSize
+        )
+    }
+
+    /// Get the 4 token positions for yard circles (used by BoardNode for drawing)
+    func yardCirclePositions(for color: PlayerColor) -> [CGPoint] {
+        return yardPositions(for: color)
     }
 
     /// Get the yard area rectangle for a color
