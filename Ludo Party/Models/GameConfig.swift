@@ -13,12 +13,35 @@ enum PlayerType: Int, Codable {
     }
 }
 
+/// Game mode for the session
+enum GameMode: Int, Codable {
+    case offline = 0
+    case onlineHost = 1
+    case onlineClient = 2
+
+    var isOnline: Bool {
+        return self == .onlineHost || self == .onlineClient
+    }
+
+    var displayName: String {
+        switch self {
+        case .offline: return "Offline"
+        case .onlineHost: return "Online (Host)"
+        case .onlineClient: return "Online (Client)"
+        }
+    }
+}
+
 /// Configuration for a game session
 struct GameConfig {
     var redPlayer: PlayerType = .human
     var greenPlayer: PlayerType = .computer
     var yellowPlayer: PlayerType = .computer
     var bluePlayer: PlayerType = .computer
+
+    // Online mode properties
+    var gameMode: GameMode = .offline
+    var onlinePlayerAssignments: [PlayerColor: String] = [:] // Color -> Player ID
 
     /// Get player type for a color
     func playerType(for color: PlayerColor) -> PlayerType {

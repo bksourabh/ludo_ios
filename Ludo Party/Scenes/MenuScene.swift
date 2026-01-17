@@ -8,6 +8,8 @@ protocol MenuSceneDelegate: AnyObject {
     func menuSceneRequestsAppleSignIn()
     func menuSceneRequestsGameCenterAuth()
     func menuSceneRequestsGuestLogin()
+    func menuSceneRequestsCreateOnlineGame()
+    func menuSceneRequestsJoinOnlineGame()
 }
 
 /// Main menu scene for game setup
@@ -22,7 +24,16 @@ class MenuScene: SKScene {
 
     // UI Containers
     private var loginContainer: SKNode!
+    private var modeSelectionContainer: SKNode!
     private var gameSetupContainer: SKNode!
+
+    // Current screen state
+    private enum MenuState {
+        case login
+        case modeSelection
+        case offlineSetup
+    }
+    private var menuState: MenuState = .login
 
     // Login UI Elements
     private var logoSprite: SKSpriteNode!
@@ -30,6 +41,12 @@ class MenuScene: SKScene {
     private var signInLabel: SKLabelNode!
     private var guestButton: SKShapeNode!
     private var guestLabel: SKLabelNode!
+
+    // Mode Selection UI Elements
+    private var playOfflineButton: SKShapeNode!
+    private var createOnlineButton: SKShapeNode!
+    private var joinOnlineButton: SKShapeNode!
+    private var modeBackButton: SKShapeNode!
 
     // Game Setup UI Elements
     private var playerButtons: [PlayerColor: SKShapeNode] = [:]
@@ -50,6 +67,7 @@ class MenuScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = SKColor(red: 0.12, green: 0.12, blue: 0.18, alpha: 1.0)
         setupLoginUI()
+        setupModeSelectionUI()
         setupGameSetupUI()
         updateVisibility()
     }
@@ -133,11 +151,151 @@ class MenuScene: SKScene {
         loginContainer.addChild(guestLabel)
     }
 
+    // MARK: - Mode Selection UI
+
+    private func setupModeSelectionUI() {
+        modeSelectionContainer = SKNode()
+        addChild(modeSelectionContainer)
+
+        // Logo (smaller, at top)
+        if let logoTexture = SKTexture(imageNamed: "LudoLogo") as SKTexture? {
+            let smallLogo = SKSpriteNode(texture: logoTexture)
+            let maxWidth = size.width * 0.4
+            let maxHeight = size.height * 0.15
+            let scale = min(maxWidth / smallLogo.size.width, maxHeight / smallLogo.size.height)
+            smallLogo.setScale(scale)
+            smallLogo.position = CGPoint(x: 0, y: size.height * 0.32)
+            modeSelectionContainer.addChild(smallLogo)
+        }
+
+        // Welcome label
+        let modeWelcomeLabel = SKLabelNode(fontNamed: "Helvetica")
+        modeWelcomeLabel.text = "Welcome, \(GameManager.shared.playerName)!"
+        modeWelcomeLabel.fontSize = 16
+        modeWelcomeLabel.fontColor = SKColor(white: 0.6, alpha: 1.0)
+        modeWelcomeLabel.position = CGPoint(x: 0, y: size.height * 0.22)
+        modeWelcomeLabel.name = "modeWelcomeLabel"
+        modeSelectionContainer.addChild(modeWelcomeLabel)
+
+        // Title
+        let modeTitle = SKLabelNode(fontNamed: "Helvetica-Bold")
+        modeTitle.text = "Choose Game Mode"
+        modeTitle.fontSize = 24
+        modeTitle.fontColor = .white
+        modeTitle.position = CGPoint(x: 0, y: size.height * 0.14)
+        modeSelectionContainer.addChild(modeTitle)
+
+        let buttonWidth = size.width * 0.75
+
+        // Play Offline button
+        playOfflineButton = createModeButton(
+            text: "Play Offline",
+            subtitle: "vs Computer or Local Players",
+            color: SKColor(red: 0.2, green: 0.7, blue: 0.3, alpha: 1.0),
+            yPos: size.height * 0.02
+        )
+        playOfflineButton.name = "playOfflineButton"
+        modeSelectionContainer.addChild(playOfflineButton)
+
+        // Create Online Game button
+        createOnlineButton = createModeButton(
+            text: "Create Online Game",
+            subtitle: "Host a multiplayer match",
+            color: SKColor(red: 0.2, green: 0.5, blue: 0.8, alpha: 1.0),
+            yPos: -size.height * 0.10
+        )
+        createOnlineButton.name = "createOnlineButton"
+        modeSelectionContainer.addChild(createOnlineButton)
+
+        // Join Online Game button
+        joinOnlineButton = createModeButton(
+            text: "Join Online Game",
+            subtitle: "Find a multiplayer match",
+            color: SKColor(red: 0.6, green: 0.3, blue: 0.7, alpha: 1.0),
+            yPos: -size.height * 0.22
+        )
+        joinOnlineButton.name = "joinOnlineButton"
+        modeSelectionContainer.addChild(joinOnlineButton)
+
+        // Check if Game Center is authenticated for online buttons
+        updateOnlineButtonsState()
+    }
+
+    private func createModeButton(text: String, subtitle: String, color: SKColor, yPos: CGFloat) -> SKShapeNode {
+        let buttonWidth = size.width * 0.75
+        let buttonHeight: CGFloat = 70
+
+        let button = SKShapeNode(rectOf: CGSize(width: buttonWidth, height: buttonHeight), cornerRadius: 12)
+        button.position = CGPoint(x: 0, y: yPos)
+        button.fillColor = color
+        button.strokeColor = color.withAlphaComponent(0.7)
+        button.lineWidth = 2
+
+        let titleLabel = SKLabelNode(fontNamed: "Helvetica-Bold")
+        titleLabel.text = text
+        titleLabel.fontSize = 18
+        titleLabel.fontColor = .white
+        titleLabel.verticalAlignmentMode = .center
+        titleLabel.position = CGPoint(x: 0, y: 10)
+        button.addChild(titleLabel)
+
+        let subtitleLabel = SKLabelNode(fontNamed: "Helvetica")
+        subtitleLabel.text = subtitle
+        subtitleLabel.fontSize = 12
+        subtitleLabel.fontColor = SKColor(white: 0.85, alpha: 1.0)
+        subtitleLabel.verticalAlignmentMode = .center
+        subtitleLabel.position = CGPoint(x: 0, y: -12)
+        button.addChild(subtitleLabel)
+
+        return button
+    }
+
+    private func updateOnlineButtonsState() {
+        let isGameCenterAuth = GameManager.shared.isGameCenterAuthenticated
+
+        createOnlineButton.alpha = isGameCenterAuth ? 1.0 : 0.5
+        joinOnlineButton.alpha = isGameCenterAuth ? 1.0 : 0.5
+
+        // Update subtitles if not authenticated
+        if !isGameCenterAuth {
+            if let subtitleLabel = createOnlineButton.children.compactMap({ $0 as? SKLabelNode }).last {
+                subtitleLabel.text = "Game Center required"
+                subtitleLabel.fontColor = SKColor(red: 1.0, green: 0.6, blue: 0.6, alpha: 1.0)
+            }
+            if let subtitleLabel = joinOnlineButton.children.compactMap({ $0 as? SKLabelNode }).last {
+                subtitleLabel.text = "Game Center required"
+                subtitleLabel.fontColor = SKColor(red: 1.0, green: 0.6, blue: 0.6, alpha: 1.0)
+            }
+        }
+    }
+
     // MARK: - Game Setup UI
 
     private func setupGameSetupUI() {
         gameSetupContainer = SKNode()
         addChild(gameSetupContainer)
+
+        // Back button
+        let backButtonSize: CGFloat = 40
+        let backButton = SKShapeNode(rectOf: CGSize(width: backButtonSize, height: backButtonSize), cornerRadius: 8)
+        backButton.position = CGPoint(x: -size.width/2 + 35, y: size.height/2 - 35)
+        backButton.fillColor = SKColor(white: 0.2, alpha: 0.8)
+        backButton.strokeColor = SKColor(white: 0.5, alpha: 1.0)
+        backButton.lineWidth = 1
+        backButton.name = "backButton"
+        gameSetupContainer.addChild(backButton)
+
+        // Back arrow
+        let arrowPath = CGMutablePath()
+        arrowPath.move(to: CGPoint(x: 5, y: 0))
+        arrowPath.addLine(to: CGPoint(x: -5, y: 8))
+        arrowPath.addLine(to: CGPoint(x: -5, y: -8))
+        arrowPath.closeSubpath()
+        let arrow = SKShapeNode(path: arrowPath)
+        arrow.fillColor = .white
+        arrow.strokeColor = .clear
+        arrow.position = .zero
+        backButton.addChild(arrow)
 
         // Logo (smaller, at top)
         if let logoTexture = SKTexture(imageNamed: "LudoLogo") as SKTexture? {
@@ -240,13 +398,37 @@ class MenuScene: SKScene {
 
     private func updateVisibility() {
         if isLoggedIn {
-            loginContainer.isHidden = true
-            gameSetupContainer.isHidden = false
-            welcomeLabel.text = "Welcome, \(GameManager.shared.playerName)!"
+            menuState = .modeSelection
         } else {
-            loginContainer.isHidden = false
-            gameSetupContainer.isHidden = true
+            menuState = .login
         }
+        updateContainerVisibility()
+    }
+
+    private func updateContainerVisibility() {
+        loginContainer.isHidden = menuState != .login
+        modeSelectionContainer.isHidden = menuState != .modeSelection
+        gameSetupContainer.isHidden = menuState != .offlineSetup
+
+        if menuState == .modeSelection {
+            // Update welcome label in mode selection
+            if let welcomeLabel = modeSelectionContainer.childNode(withName: "modeWelcomeLabel") as? SKLabelNode {
+                welcomeLabel.text = "Welcome, \(GameManager.shared.playerName)!"
+            }
+            updateOnlineButtonsState()
+        } else if menuState == .offlineSetup {
+            welcomeLabel.text = "Welcome, \(GameManager.shared.playerName)!"
+        }
+    }
+
+    private func showModeSelection() {
+        menuState = .modeSelection
+        updateContainerVisibility()
+    }
+
+    private func showOfflineSetup() {
+        menuState = .offlineSetup
+        updateContainerVisibility()
     }
 
     private func updatePlayerButton(_ color: PlayerColor) {
@@ -291,36 +473,81 @@ class MenuScene: SKScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        if !isLoggedIn {
-            // Login screen - check sign in button
-            if signInButton.contains(location) {
-                animateButtonPress(signInButton) { [weak self] in
-                    self?.menuDelegate?.menuSceneRequestsAppleSignIn()
-                }
+        switch menuState {
+        case .login:
+            handleLoginTouch(at: location)
+        case .modeSelection:
+            handleModeSelectionTouch(at: location)
+        case .offlineSetup:
+            handleOfflineSetupTouch(at: location)
+        }
+    }
+
+    private func handleLoginTouch(at location: CGPoint) {
+        if signInButton.contains(location) {
+            animateButtonPress(signInButton) { [weak self] in
+                self?.menuDelegate?.menuSceneRequestsAppleSignIn()
+            }
+            return
+        }
+
+        if guestButton.contains(location) {
+            animateButtonPress(guestButton) { [weak self] in
+                self?.menuDelegate?.menuSceneRequestsGuestLogin()
+            }
+        }
+    }
+
+    private func handleModeSelectionTouch(at location: CGPoint) {
+        // Play Offline button
+        if playOfflineButton.contains(location) {
+            animateButtonPress(playOfflineButton) { [weak self] in
+                self?.showOfflineSetup()
+            }
+            return
+        }
+
+        // Create Online Game button
+        if createOnlineButton.contains(location) && GameManager.shared.isGameCenterAuthenticated {
+            animateButtonPress(createOnlineButton) { [weak self] in
+                self?.menuDelegate?.menuSceneRequestsCreateOnlineGame()
+            }
+            return
+        }
+
+        // Join Online Game button
+        if joinOnlineButton.contains(location) && GameManager.shared.isGameCenterAuthenticated {
+            animateButtonPress(joinOnlineButton) { [weak self] in
+                self?.menuDelegate?.menuSceneRequestsJoinOnlineGame()
+            }
+            return
+        }
+    }
+
+    private func handleOfflineSetupTouch(at location: CGPoint) {
+        // Check back button
+        if let backButton = gameSetupContainer.childNode(withName: "backButton") as? SKShapeNode,
+           backButton.contains(location) {
+            animateButtonPress(backButton) { [weak self] in
+                self?.showModeSelection()
+            }
+            return
+        }
+
+        // Player buttons
+        for color in PlayerColor.allCases {
+            if let button = playerButtons[color], button.contains(location) {
+                togglePlayerType(color)
                 return
             }
+        }
 
-            // Check guest button
-            if guestButton.contains(location) {
-                animateButtonPress(guestButton) { [weak self] in
-                    self?.menuDelegate?.menuSceneRequestsGuestLogin()
-                }
-                return
-            }
-        } else {
-            // Game setup screen - check player buttons and start button
-            for color in PlayerColor.allCases {
-                if let button = playerButtons[color], button.contains(location) {
-                    togglePlayerType(color)
-                    return
-                }
-            }
-
-            if startButton.contains(location) {
-                animateButtonPress(startButton) { [weak self] in
-                    guard let self = self else { return }
-                    self.menuDelegate?.menuSceneDidStartGame(with: self.gameConfig)
-                }
+        // Start button
+        if startButton.contains(location) {
+            animateButtonPress(startButton) { [weak self] in
+                guard let self = self else { return }
+                self.gameConfig.gameMode = .offline
+                self.menuDelegate?.menuSceneDidStartGame(with: self.gameConfig)
             }
         }
     }
