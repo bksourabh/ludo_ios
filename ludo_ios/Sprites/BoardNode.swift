@@ -1,0 +1,321 @@
+import SpriteKit
+
+/// SpriteKit node that renders the Ludo board
+class BoardNode: SKNode {
+    let boardSize: CGFloat
+    let ludoBoard: LudoBoard
+    let cellSize: CGFloat
+
+    private let backgroundColor = SKColor(white: 0.95, alpha: 1.0)
+    private let lineColor = SKColor(white: 0.3, alpha: 1.0)
+
+    init(size: CGFloat) {
+        self.boardSize = size
+        self.cellSize = size / 15.0
+        self.ludoBoard = LudoBoard(boardSize: size)
+        super.init()
+
+        // Set board origin for position calculations (bottom-left of board)
+        ludoBoard.setOrigin(CGPoint(x: -size/2, y: -size/2))
+
+        drawBoard()
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Coordinate Helpers
+
+    /// Convert grid (col, row) to screen position (center of cell)
+    private func gridToScreen(col: Int, row: Int) -> CGPoint {
+        let x = -boardSize/2 + (CGFloat(col) + 0.5) * cellSize
+        let y = -boardSize/2 + (CGFloat(row) + 0.5) * cellSize
+        return CGPoint(x: x, y: y)
+    }
+
+    /// Get cell rectangle in screen coordinates
+    private func cellRect(col: Int, row: Int) -> CGRect {
+        let x = -boardSize/2 + CGFloat(col) * cellSize
+        let y = -boardSize/2 + CGFloat(row) * cellSize
+        return CGRect(x: x, y: y, width: cellSize, height: cellSize)
+    }
+
+    // MARK: - Drawing
+
+    private func drawBoard() {
+        // Draw background
+        let background = SKShapeNode(rectOf: CGSize(width: boardSize, height: boardSize))
+        background.fillColor = backgroundColor
+        background.strokeColor = lineColor
+        background.lineWidth = 2
+        background.zPosition = -10
+        addChild(background)
+
+        // Draw colored yards (4 corners)
+        drawYards()
+
+        // Draw the track cells
+        drawTrack()
+
+        // Draw home paths (colored paths to center)
+        drawHomePaths()
+
+        // Draw center home area
+        drawCenterHome()
+
+        // Draw start position markers
+        drawStartPositions()
+
+        // Draw safe square stars
+        drawSafeSquares()
+
+        // Draw yard token circles
+        drawYardCircles()
+    }
+
+    private func drawYards() {
+        // Red yard: bottom-left (cols 0-5, rows 0-5)
+        drawYard(startCol: 0, startRow: 0, color: .red)
+        // Green yard: top-left (cols 0-5, rows 9-14)
+        drawYard(startCol: 0, startRow: 9, color: .green)
+        // Yellow yard: top-right (cols 9-14, rows 9-14)
+        drawYard(startCol: 9, startRow: 9, color: .yellow)
+        // Blue yard: bottom-right (cols 9-14, rows 0-5)
+        drawYard(startCol: 9, startRow: 0, color: .blue)
+    }
+
+    private func drawYard(startCol: Int, startRow: Int, color: PlayerColor) {
+        let yardSize = cellSize * 6
+
+        // Outer colored rectangle
+        let x = -boardSize/2 + CGFloat(startCol) * cellSize
+        let y = -boardSize/2 + CGFloat(startRow) * cellSize
+        let outerRect = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize))
+        outerRect.fillColor = color.color
+        outerRect.strokeColor = lineColor
+        outerRect.lineWidth = 2
+        outerRect.zPosition = -5
+        addChild(outerRect)
+
+        // Inner white area (with margin)
+        let margin = cellSize * 0.8
+        let innerRect = SKShapeNode(rect: CGRect(
+            x: x + margin,
+            y: y + margin,
+            width: yardSize - margin * 2,
+            height: yardSize - margin * 2
+        ), cornerRadius: 8)
+        innerRect.fillColor = .white
+        innerRect.strokeColor = lineColor
+        innerRect.lineWidth = 1
+        innerRect.zPosition = -4
+        addChild(innerRect)
+    }
+
+    private func drawTrack() {
+        // Draw the cross-shaped track
+        // Vertical arm: columns 6-8, rows 0-5 and 9-14
+        // Horizontal arm: rows 6-8, columns 0-5 and 9-14
+
+        // Draw all track cells (the cross shape excluding yards and center)
+        for row in 0..<15 {
+            for col in 0..<15 {
+                // Check if this is a track cell
+                let isVerticalArm = (col >= 6 && col <= 8) && (row <= 5 || row >= 9)
+                let isHorizontalArm = (row >= 6 && row <= 8) && (col <= 5 || col >= 9)
+
+                if isVerticalArm || isHorizontalArm {
+                    let rect = cellRect(col: col, row: row)
+                    let cell = SKShapeNode(rect: rect)
+                    cell.fillColor = .white
+                    cell.strokeColor = lineColor
+                    cell.lineWidth = 0.5
+                    cell.zPosition = -3
+                    addChild(cell)
+                }
+            }
+        }
+    }
+
+    private func drawHomePaths() {
+        // Red home path: column 7, rows 1-6 (going up towards center)
+        for row in 1...6 {
+            drawHomePathCell(col: 7, row: row, color: .red)
+        }
+
+        // Green home path: row 7, columns 1-6 (going right towards center)
+        for col in 1...6 {
+            drawHomePathCell(col: col, row: 7, color: .green)
+        }
+
+        // Yellow home path: column 7, rows 8-13 (going down towards center)
+        for row in 8...13 {
+            drawHomePathCell(col: 7, row: row, color: .yellow)
+        }
+
+        // Blue home path: row 7, columns 8-13 (going left towards center)
+        for col in 8...13 {
+            drawHomePathCell(col: col, row: 7, color: .blue)
+        }
+    }
+
+    private func drawHomePathCell(col: Int, row: Int, color: PlayerColor) {
+        let rect = cellRect(col: col, row: row)
+        let cell = SKShapeNode(rect: rect)
+        cell.fillColor = color.lightColor
+        cell.strokeColor = color.color
+        cell.lineWidth = 1
+        cell.zPosition = -2
+        addChild(cell)
+    }
+
+    private func drawCenterHome() {
+        let centerSize = cellSize * 3
+        let center = CGPoint(x: 0, y: 0) // Board is centered
+
+        // White background
+        let centerBg = SKShapeNode(rectOf: CGSize(width: centerSize, height: centerSize))
+        centerBg.position = center
+        centerBg.fillColor = .white
+        centerBg.strokeColor = lineColor
+        centerBg.lineWidth = 2
+        centerBg.zPosition = -1
+        addChild(centerBg)
+
+        // Draw colored triangles
+        let triangleSize = centerSize / 2
+
+        // Red triangle (bottom, pointing up)
+        drawTriangle(at: center, size: triangleSize, color: .red, rotation: 0)
+        // Green triangle (left, pointing right)
+        drawTriangle(at: center, size: triangleSize, color: .green, rotation: .pi / 2)
+        // Yellow triangle (top, pointing down)
+        drawTriangle(at: center, size: triangleSize, color: .yellow, rotation: .pi)
+        // Blue triangle (right, pointing left)
+        drawTriangle(at: center, size: triangleSize, color: .blue, rotation: -.pi / 2)
+    }
+
+    private func drawTriangle(at center: CGPoint, size: CGFloat, color: PlayerColor, rotation: CGFloat) {
+        let path = CGMutablePath()
+        // Triangle pointing up from bottom
+        path.move(to: CGPoint(x: -size/2, y: -size/2))
+        path.addLine(to: CGPoint(x: size/2, y: -size/2))
+        path.addLine(to: CGPoint(x: 0, y: 0))
+        path.closeSubpath()
+
+        let triangle = SKShapeNode(path: path)
+        triangle.fillColor = color.color
+        triangle.strokeColor = lineColor
+        triangle.lineWidth = 1
+        triangle.position = center
+        triangle.zRotation = rotation
+        triangle.zPosition = 0
+        addChild(triangle)
+    }
+
+    private func drawStartPositions() {
+        // Mark the starting positions for each color with an arrow/indicator
+        let startPositions: [(col: Int, row: Int, color: PlayerColor)] = [
+            (6, 1, .red),    // Red starts at column 6, row 1
+            (1, 8, .green),  // Green starts at column 1, row 8
+            (8, 13, .yellow), // Yellow starts at column 8, row 13
+            (13, 6, .blue)   // Blue starts at column 13, row 6
+        ]
+
+        for (col, row, color) in startPositions {
+            let pos = gridToScreen(col: col, row: row)
+
+            // Draw colored circle indicator
+            let indicator = SKShapeNode(circleOfRadius: cellSize * 0.35)
+            indicator.position = pos
+            indicator.fillColor = color.color.withAlphaComponent(0.5)
+            indicator.strokeColor = color.color
+            indicator.lineWidth = 2
+            indicator.zPosition = 1
+            addChild(indicator)
+        }
+    }
+
+    private func drawSafeSquares() {
+        // Safe squares are at specific positions on the track
+        // Standard Ludo has safe squares at: 0, 8, 13, 21, 26, 34, 39, 47
+        let safePositions: [(col: Int, row: Int)] = [
+            (6, 2),   // Position 1 (one after red start)
+            (1, 6),   // Position 8
+            (2, 8),   // Position 14 (one after green start)
+            (6, 12),  // Position 21
+            (8, 12),  // Position 27 (one after yellow start)
+            (13, 8),  // Position 34
+            (12, 6),  // Position 40 (one after blue start)
+            (8, 2)    // Position 47
+        ]
+
+        for (col, row) in safePositions {
+            let pos = gridToScreen(col: col, row: row)
+            let star = createStar(size: cellSize * 0.3)
+            star.position = pos
+            star.fillColor = SKColor(white: 0.9, alpha: 1.0)
+            star.strokeColor = SKColor(white: 0.4, alpha: 1.0)
+            star.lineWidth = 1
+            star.zPosition = 2
+            addChild(star)
+        }
+    }
+
+    private func createStar(size: CGFloat) -> SKShapeNode {
+        let path = CGMutablePath()
+        let points = 5
+        let innerRadius = size * 0.4
+        let outerRadius = size
+
+        for i in 0..<points * 2 {
+            let radius = i % 2 == 0 ? outerRadius : innerRadius
+            let angle = CGFloat(i) * .pi / CGFloat(points) - .pi / 2
+            let point = CGPoint(
+                x: cos(angle) * radius,
+                y: sin(angle) * radius
+            )
+            if i == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+
+        return SKShapeNode(path: path)
+    }
+
+    private func drawYardCircles() {
+        // Draw circles in each yard where tokens start
+        // These positions must match exactly with LudoBoard.yardTokenGridPositions
+        let yardPositions: [(positions: [(col: Int, row: Int)], color: PlayerColor)] = [
+            ([(2, 2), (4, 2), (2, 4), (4, 4)], .red),
+            ([(2, 10), (4, 10), (2, 12), (4, 12)], .green),
+            ([(10, 10), (12, 10), (10, 12), (12, 12)], .yellow),
+            ([(10, 2), (12, 2), (10, 4), (12, 4)], .blue)
+        ]
+
+        let circleRadius = cellSize * 0.38
+
+        for (positions, color) in yardPositions {
+            for (col, row) in positions {
+                let pos = gridToScreen(col: col, row: row)
+
+                let circle = SKShapeNode(circleOfRadius: circleRadius)
+                circle.position = pos
+                circle.fillColor = color.lightColor
+                circle.strokeColor = color.color
+                circle.lineWidth = 2
+                circle.zPosition = 3
+                addChild(circle)
+            }
+        }
+    }
+
+    /// Get the LudoBoard for position calculations
+    func getBoard() -> LudoBoard {
+        return ludoBoard
+    }
+}
