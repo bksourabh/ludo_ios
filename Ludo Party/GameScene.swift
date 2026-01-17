@@ -396,11 +396,14 @@ class GameScene: SKScene {
                 }
             } else {
                 // Human player
-                highlightMovableTokens()
-
                 if movable.count == 1 {
-                    showMessage("Tap your token or dice to move")
+                    // Auto-play when only one move is possible
+                    showMessage("Moving...")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                        self?.moveToken(movable[0])
+                    }
                 } else if movable.count > 1 {
+                    highlightMovableTokens()
                     showMessage("Select a token to move")
                 }
             }
