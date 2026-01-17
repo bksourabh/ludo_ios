@@ -24,15 +24,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		A18F8BB02F1BA0CE00A1ECBE /* ludo_ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ludo_ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A18F8BC92F1BA0CF00A1ECBE /* ludo_iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ludo_iosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A18F8BD32F1BA0CF00A1ECBE /* ludo_iosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ludo_iosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A18F8BB02F1BA0CE00A1ECBE /* Ludo Party.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ludo Party.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A18F8BC92F1BA0CF00A1ECBE /* Ludo PartyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Ludo PartyTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A18F8BD32F1BA0CF00A1ECBE /* Ludo PartyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Ludo PartyUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		A18F8BB22F1BA0CE00A1ECBE /* ludo_ios */ = {
+		A18F8BB22F1BA0CE00A1ECBE /* Ludo Party */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = ludo_ios;
+			path = "Ludo Party";
 			sourceTree = "<group>";
 		};
 		A18F8BCC2F1BA0CF00A1ECBE /* ludo_iosTests */ = {
@@ -75,7 +75,7 @@
 		A18F8BA72F1BA0CE00A1ECBE = {
 			isa = PBXGroup;
 			children = (
-				A18F8BB22F1BA0CE00A1ECBE /* ludo_ios */,
+				A18F8BB22F1BA0CE00A1ECBE /* Ludo Party */,
 				A18F8BCC2F1BA0CF00A1ECBE /* ludo_iosTests */,
 				A18F8BD62F1BA0CF00A1ECBE /* ludo_iosUITests */,
 				A18F8BB12F1BA0CE00A1ECBE /* Products */,
@@ -85,9 +85,9 @@
 		A18F8BB12F1BA0CE00A1ECBE /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A18F8BB02F1BA0CE00A1ECBE /* ludo_ios.app */,
-				A18F8BC92F1BA0CF00A1ECBE /* ludo_iosTests.xctest */,
-				A18F8BD32F1BA0CF00A1ECBE /* ludo_iosUITests.xctest */,
+				A18F8BB02F1BA0CE00A1ECBE /* Ludo Party.app */,
+				A18F8BC92F1BA0CF00A1ECBE /* Ludo PartyTests.xctest */,
+				A18F8BD32F1BA0CF00A1ECBE /* Ludo PartyUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A18F8BAF2F1BA0CE00A1ECBE /* ludo_ios */ = {
+		A18F8BAF2F1BA0CE00A1ECBE /* Ludo Party */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A18F8BDD2F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "ludo_ios" */;
+			buildConfigurationList = A18F8BDD2F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "Ludo Party" */;
 			buildPhases = (
 				A18F8BAC2F1BA0CE00A1ECBE /* Sources */,
 				A18F8BAD2F1BA0CE00A1ECBE /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A18F8BB22F1BA0CE00A1ECBE /* ludo_ios */,
+				A18F8BB22F1BA0CE00A1ECBE /* Ludo Party */,
 			);
-			name = ludo_ios;
+			name = "Ludo Party";
 			packageProductDependencies = (
 			);
 			productName = ludo_ios;
-			productReference = A18F8BB02F1BA0CE00A1ECBE /* ludo_ios.app */;
+			productReference = A18F8BB02F1BA0CE00A1ECBE /* Ludo Party.app */;
 			productType = "com.apple.product-type.application";
 		};
-		A18F8BC82F1BA0CF00A1ECBE /* ludo_iosTests */ = {
+		A18F8BC82F1BA0CF00A1ECBE /* Ludo PartyTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A18F8BE02F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "ludo_iosTests" */;
+			buildConfigurationList = A18F8BE02F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "Ludo PartyTests" */;
 			buildPhases = (
 				A18F8BC52F1BA0CF00A1ECBE /* Sources */,
 				A18F8BC62F1BA0CF00A1ECBE /* Frameworks */,
@@ -133,16 +133,16 @@
 			fileSystemSynchronizedGroups = (
 				A18F8BCC2F1BA0CF00A1ECBE /* ludo_iosTests */,
 			);
-			name = ludo_iosTests;
+			name = "Ludo PartyTests";
 			packageProductDependencies = (
 			);
 			productName = ludo_iosTests;
-			productReference = A18F8BC92F1BA0CF00A1ECBE /* ludo_iosTests.xctest */;
+			productReference = A18F8BC92F1BA0CF00A1ECBE /* Ludo PartyTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		A18F8BD22F1BA0CF00A1ECBE /* ludo_iosUITests */ = {
+		A18F8BD22F1BA0CF00A1ECBE /* Ludo PartyUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A18F8BE32F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "ludo_iosUITests" */;
+			buildConfigurationList = A18F8BE32F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "Ludo PartyUITests" */;
 			buildPhases = (
 				A18F8BCF2F1BA0CF00A1ECBE /* Sources */,
 				A18F8BD02F1BA0CF00A1ECBE /* Frameworks */,
@@ -156,11 +156,11 @@
 			fileSystemSynchronizedGroups = (
 				A18F8BD62F1BA0CF00A1ECBE /* ludo_iosUITests */,
 			);
-			name = ludo_iosUITests;
+			name = "Ludo PartyUITests";
 			packageProductDependencies = (
 			);
 			productName = ludo_iosUITests;
-			productReference = A18F8BD32F1BA0CF00A1ECBE /* ludo_iosUITests.xctest */;
+			productReference = A18F8BD32F1BA0CF00A1ECBE /* Ludo PartyUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A18F8BAB2F1BA0CE00A1ECBE /* Build configuration list for PBXProject "ludo_ios" */;
+			buildConfigurationList = A18F8BAB2F1BA0CE00A1ECBE /* Build configuration list for PBXProject "Ludo Party" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A18F8BAF2F1BA0CE00A1ECBE /* ludo_ios */,
-				A18F8BC82F1BA0CF00A1ECBE /* ludo_iosTests */,
-				A18F8BD22F1BA0CF00A1ECBE /* ludo_iosUITests */,
+				A18F8BAF2F1BA0CE00A1ECBE /* Ludo Party */,
+				A18F8BC82F1BA0CF00A1ECBE /* Ludo PartyTests */,
+				A18F8BD22F1BA0CF00A1ECBE /* Ludo PartyUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		A18F8BCB2F1BA0CF00A1ECBE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A18F8BAF2F1BA0CE00A1ECBE /* ludo_ios */;
+			target = A18F8BAF2F1BA0CE00A1ECBE /* Ludo Party */;
 			targetProxy = A18F8BCA2F1BA0CF00A1ECBE /* PBXContainerItemProxy */;
 		};
 		A18F8BD52F1BA0CF00A1ECBE /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = A18F8BAF2F1BA0CE00A1ECBE /* ludo_ios */;
+			target = A18F8BAF2F1BA0CE00A1ECBE /* Ludo Party */;
 			targetProxy = A18F8BD42F1BA0CF00A1ECBE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -395,7 +395,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ludo_ios/ludo_ios.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Ludo Party/Ludo Party.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = T6WY543Y4A;
@@ -429,7 +429,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = ludo_ios/ludo_ios.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Ludo Party/Ludo Party.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = T6WY543Y4A;
@@ -476,7 +476,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ludo_ios.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ludo_ios";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ludo Party.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Ludo Party";
 			};
 			name = Debug;
 		};
@@ -498,7 +498,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ludo_ios.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ludo_ios";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Ludo Party.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Ludo Party";
 			};
 			name = Release;
 		};
@@ -545,7 +545,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A18F8BAB2F1BA0CE00A1ECBE /* Build configuration list for PBXProject "ludo_ios" */ = {
+		A18F8BAB2F1BA0CE00A1ECBE /* Build configuration list for PBXProject "Ludo Party" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A18F8BDB2F1BA0CF00A1ECBE /* Debug */,
@@ -554,7 +554,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A18F8BDD2F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "ludo_ios" */ = {
+		A18F8BDD2F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "Ludo Party" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A18F8BDE2F1BA0CF00A1ECBE /* Debug */,
@@ -563,7 +563,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A18F8BE02F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "ludo_iosTests" */ = {
+		A18F8BE02F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "Ludo PartyTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A18F8BE12F1BA0CF00A1ECBE /* Debug */,
@@ -572,7 +572,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A18F8BE32F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "ludo_iosUITests" */ = {
+		A18F8BE32F1BA0CF00A1ECBE /* Build configuration list for PBXNativeTarget "Ludo PartyUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A18F8BE42F1BA0CF00A1ECBE /* Debug */,
