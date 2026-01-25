@@ -81,6 +81,10 @@ class DiceNode: SKNode {
     func animateRoll(finalValue: Int, duration: TimeInterval = 0.8, completion: (() -> Void)? = nil) {
         isEnabled = false
 
+        // Play dice rolling sound
+        let soundAction = SKAction.playSoundFileNamed("dice.mp3", waitForCompletion: false)
+        run(soundAction)
+
         let numberOfFrames = 12
         let frameDuration = duration / Double(numberOfFrames)
 
