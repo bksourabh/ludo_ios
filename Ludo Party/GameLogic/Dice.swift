@@ -12,6 +12,40 @@ class Dice {
         return value
     }
 
+    /// Roll with weighted distribution to favor or handicap a player
+    /// - Parameter favorHuman: true biases toward higher values, false biases toward lower values
+    func rollBiased(favorHuman: Bool = true) -> Int {
+        let rand = Int.random(in: 1...100)
+        let value: Int
+
+        if favorHuman {
+            // Human-friendly distribution:
+            // 1: 8%, 2: 10%, 3: 12%, 4: 18%, 5: 22%, 6: 30%
+            switch rand {
+            case 1...8:   value = 1
+            case 9...18:  value = 2
+            case 19...30: value = 3
+            case 31...48: value = 4
+            case 49...70: value = 5
+            default:      value = 6
+            }
+        } else {
+            // Computer-handicapped distribution:
+            // 1: 22%, 2: 22%, 3: 20%, 4: 16%, 5: 12%, 6: 8%
+            switch rand {
+            case 1...22:  value = 1
+            case 23...44: value = 2
+            case 45...64: value = 3
+            case 65...80: value = 4
+            case 81...92: value = 5
+            default:      value = 6
+            }
+        }
+
+        currentValue = value
+        return value
+    }
+
     /// Roll the dice with animation callback support
     /// The callback receives intermediate values during animation and final value at the end
     func rollWithAnimation(duration: Double = 0.8, onValue: @escaping (Int, Bool) -> Void) {

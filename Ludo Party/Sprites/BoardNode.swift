@@ -243,15 +243,13 @@ class BoardNode: SKNode {
     private func drawSafeSquares() {
         // Safe squares are at specific positions on the track
         // Standard Ludo has safe squares at: 0, 8, 13, 21, 26, 34, 39, 47
+        // Stars only at the "5 before start" safe positions
+        // (starting positions are also safe but marked with colored circles instead)
         let safePositions: [(col: Int, row: Int)] = [
-            (6, 2),   // Position 1 (one after red start)
-            (1, 6),   // Position 8
-            (2, 8),   // Position 14 (one after green start)
-            (6, 12),  // Position 21
-            (8, 12),  // Position 27 (one after yellow start)
-            (13, 8),  // Position 34
-            (12, 6),  // Position 40 (one after blue start)
-            (8, 2)    // Position 47
+            (8, 2),   // Position 47 — 5 before Red start
+            (2, 6),   // Position 8  — 5 before Green start
+            (6, 12),  // Position 21 — 5 before Yellow start
+            (12, 8)   // Position 34 — 5 before Blue start
         ]
 
         for (col, row) in safePositions {
