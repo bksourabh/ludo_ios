@@ -37,7 +37,7 @@ class GameScene: SKScene {
     // AI timing
     private let aiGlowDelay: TimeInterval = 0.5
     private let aiMoveDelay: TimeInterval = 0.5
-    private let noMovesHoldDelay: TimeInterval = 2.0
+    private let noMovesHoldDelay: TimeInterval = 1.0
 
     // Deferred turn change tracking (for no valid moves case)
     private var noValidMovesOccurred: Bool = false
@@ -409,11 +409,11 @@ class GameScene: SKScene {
     }
 
     private func afterDiceRoll(value: Int) {
-        // Handle deferred "no valid moves" — hold dice result for 2 seconds
+        // Handle deferred "no valid moves" — hold dice result for 1 second
         if let pendingPlayer = pendingTurnPlayer {
             pendingTurnPlayer = nil
             noValidMovesOccurred = false
-            showMessage("No valid moves!")
+            currentPlayerLabel.text = "No possible move"
 
             DispatchQueue.main.asyncAfter(deadline: .now() + noMovesHoldDelay) { [weak self] in
                 self?.executeTurnChange(to: pendingPlayer)
