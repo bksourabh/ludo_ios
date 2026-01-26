@@ -191,12 +191,12 @@ class BoardNode: SKNode {
 
         // Red triangle (bottom, pointing up)
         drawTriangle(at: center, size: triangleSize, color: .red, rotation: 0)
-        // Green triangle (left, pointing right)
-        drawTriangle(at: center, size: triangleSize, color: .green, rotation: .pi / 2)
+        // Blue triangle (left, pointing right)
+        drawTriangle(at: center, size: triangleSize, color: .blue, rotation: .pi / 2)
         // Yellow triangle (top, pointing down)
         drawTriangle(at: center, size: triangleSize, color: .yellow, rotation: .pi)
-        // Blue triangle (right, pointing left)
-        drawTriangle(at: center, size: triangleSize, color: .blue, rotation: -.pi / 2)
+        // Green triangle (right, pointing left)
+        drawTriangle(at: center, size: triangleSize, color: .green, rotation: -.pi / 2)
     }
 
     private func drawTriangle(at center: CGPoint, size: CGFloat, color: PlayerColor, rotation: CGFloat) {
