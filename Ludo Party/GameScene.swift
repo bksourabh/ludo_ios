@@ -432,11 +432,11 @@ class GameScene: SKScene {
                 }
             } else {
                 // Human player
-                let allInYard = movable.allSatisfy { $0.state == .inYard }
+                // Auto-play when all movable tokens are in the same state
+                // (e.g. all in yard, or all at the same track position)
+                let allSameState = movable.allSatisfy { $0.state == movable[0].state }
 
-                if movable.count == 1 || allInYard {
-                    // Auto-play when only one move is possible,
-                    // or all movable tokens are in yard (equivalent moves)
+                if movable.count == 1 || allSameState {
                     showMessage("Moving...")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                         self?.moveToken(movable[0])
