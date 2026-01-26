@@ -432,8 +432,11 @@ class GameScene: SKScene {
                 }
             } else {
                 // Human player
-                if movable.count == 1 {
-                    // Auto-play when only one move is possible
+                let allInYard = movable.allSatisfy { $0.state == .inYard }
+
+                if movable.count == 1 || allInYard {
+                    // Auto-play when only one move is possible,
+                    // or all movable tokens are in yard (equivalent moves)
                     showMessage("Moving...")
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
                         self?.moveToken(movable[0])
