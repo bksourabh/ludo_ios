@@ -218,25 +218,34 @@ class BoardNode: SKNode {
     }
 
     private func drawStartPositions() {
-        // Mark the starting positions for each color with an arrow/indicator
         let startPositions: [(col: Int, row: Int, color: PlayerColor)] = [
-            (6, 1, .red),    // Red starts at column 6, row 1
-            (1, 8, .green),  // Green starts at column 1, row 8
-            (8, 13, .yellow), // Yellow starts at column 8, row 13
-            (13, 6, .blue)   // Blue starts at column 13, row 6
+            (6, 1, .red),
+            (1, 8, .green),
+            (8, 13, .yellow),
+            (13, 6, .blue)
         ]
 
         for (col, row, color) in startPositions {
+            let rect = cellRect(col: col, row: row)
             let pos = gridToScreen(col: col, row: row)
 
-            // Draw colored circle indicator
-            let indicator = SKShapeNode(circleOfRadius: cellSize * 0.35)
-            indicator.position = pos
-            indicator.fillColor = color.color.withAlphaComponent(0.5)
-            indicator.strokeColor = color.color
-            indicator.lineWidth = 2
-            indicator.zPosition = 1
-            addChild(indicator)
+            // Colored background for the entire cell
+            let bg = SKShapeNode(rect: rect)
+            bg.fillColor = color.color
+            bg.strokeColor = lineColor
+            bg.lineWidth = 0.5
+            bg.zPosition = -2
+            addChild(bg)
+
+            // Glowing halo circle
+            let halo = SKShapeNode(circleOfRadius: cellSize * 0.35)
+            halo.position = pos
+            halo.fillColor = .clear
+            halo.strokeColor = .white
+            halo.lineWidth = 2
+            halo.glowWidth = 6
+            halo.zPosition = 2
+            addChild(halo)
         }
     }
 
