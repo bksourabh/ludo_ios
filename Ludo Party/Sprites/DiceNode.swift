@@ -7,6 +7,7 @@ class DiceNode: SKNode {
     private var backgroundNode: SKShapeNode!
     private var dotsContainer: SKNode!
     private var currentValue: Int = 1
+    private var glowNode: SKShapeNode?
 
     var isEnabled: Bool = true {
         didSet {
@@ -78,7 +79,7 @@ class DiceNode: SKNode {
     }
 
     /// Animate rolling the dice
-    func animateRoll(finalValue: Int, duration: TimeInterval = 0.8, completion: (() -> Void)? = nil) {
+    func animateRoll(finalValue: Int, duration: TimeInterval = 2.0, completion: (() -> Void)? = nil) {
         isEnabled = false
 
         // Play dice rolling sound
@@ -135,19 +136,30 @@ class DiceNode: SKNode {
         run(SKAction.repeat(shake, count: 2))
     }
 
-    /// Highlight effect when it's time to roll
-    func showRollPrompt() {
-        let scaleUp = SKAction.scale(to: 1.1, duration: 0.3)
-        let scaleDown = SKAction.scale(to: 1.0, duration: 0.3)
-        let pulse = SKAction.sequence([scaleUp, scaleDown])
+    /// Show glowing effect with the current player's color
+    func showGlow(color: PlayerColor) {
+        hideGlow()
 
-        run(SKAction.repeatForever(pulse), withKey: "rollPrompt")
+        let glowSize = size + 12
+        glowNode = SKShapeNode(rectOf: CGSize(width: glowSize, height: glowSize), cornerRadius: size * 0.2)
+        glowNode?.fillColor = .clear
+        glowNode?.strokeColor = color.color
+        glowNode?.lineWidth = 4
+        glowNode?.glowWidth = 10
+        glowNode?.zPosition = -0.5
+        addChild(glowNode!)
+
+        // Pulse animation on the glow
+        let fadeOut = SKAction.fadeAlpha(to: 0.4, duration: 0.5)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.5)
+        let pulse = SKAction.sequence([fadeOut, fadeIn])
+        glowNode?.run(SKAction.repeatForever(pulse))
     }
 
-    /// Stop the roll prompt animation
-    func hideRollPrompt() {
-        removeAction(forKey: "rollPrompt")
-        run(SKAction.scale(to: 1.0, duration: 0.1))
+    /// Remove the glowing effect
+    func hideGlow() {
+        glowNode?.removeFromParent()
+        glowNode = nil
     }
 
     /// Check if point is within dice area

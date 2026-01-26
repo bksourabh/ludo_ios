@@ -184,7 +184,7 @@ class OnlineGameScene: SKScene {
             hideWaitingOverlay()
             if gameEngine.phase == .rolling {
                 showMessage("Tap dice to roll!")
-                diceNode.showRollPrompt()
+                diceNode.showGlow(color: player.color)
             }
         } else {
             showWaitingOverlay(for: player.color)
@@ -372,7 +372,7 @@ class OnlineGameScene: SKScene {
     private func rollDice() {
         guard multiplayerController.isLocalPlayerTurn else { return }
 
-        diceNode.hideRollPrompt()
+        diceNode.hideGlow()
         let value = multiplayerController.localPlayerRollDice()
 
         diceNode.animateRoll(finalValue: value) { [weak self] in

@@ -35,8 +35,13 @@ class GameScene: SKScene {
     private var diceSize: CGFloat = 0
 
     // AI timing
-    private let aiRollDelay: TimeInterval = 0.8
+    private let aiGlowDelay: TimeInterval = 0.5
     private let aiMoveDelay: TimeInterval = 0.5
+    private let noMovesHoldDelay: TimeInterval = 2.0
+
+    // Deferred turn change tracking (for no valid moves case)
+    private var noValidMovesOccurred: Bool = false
+    private var pendingTurnPlayer: Player?
 
     // MARK: - Scene Lifecycle
 
@@ -204,6 +209,25 @@ class GameScene: SKScene {
     private func clearHighlights() {
         for (_, tokenNode) in tokenNodes {
             tokenNode.isHighlighted = false
+        }
+    }
+
+    private func updateTurnHighlights() {
+        let currentColor = gameEngine.currentPlayer.color
+
+        // Highlight the current player's yard
+        boardNode.highlightYard(for: currentColor)
+
+        // Highlight all tokens belonging to the current player
+        for (_, tokenNode) in tokenNodes {
+            tokenNode.isTurnActive = (tokenNode.token.color == currentColor)
+        }
+    }
+
+    private func clearTurnHighlights() {
+        boardNode.unhighlightYard()
+        for (_, tokenNode) in tokenNodes {
+            tokenNode.isTurnActive = false
         }
     }
 
@@ -375,7 +399,7 @@ class GameScene: SKScene {
     // MARK: - Game Actions
 
     private func rollDice() {
-        diceNode.hideRollPrompt()
+        diceNode.hideGlow()
 
         let value = gameEngine.rollDice()
 
@@ -385,6 +409,18 @@ class GameScene: SKScene {
     }
 
     private func afterDiceRoll(value: Int) {
+        // Handle deferred "no valid moves" — hold dice result for 2 seconds
+        if let pendingPlayer = pendingTurnPlayer {
+            pendingTurnPlayer = nil
+            noValidMovesOccurred = false
+            showMessage("No valid moves!")
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + noMovesHoldDelay) { [weak self] in
+                self?.executeTurnChange(to: pendingPlayer)
+            }
+            return
+        }
+
         if gameEngine.phase == .selectingToken {
             let movable = gameEngine.movableTokens()
 
@@ -419,12 +455,27 @@ class GameScene: SKScene {
         moveToken(bestToken)
     }
 
+    private func executeTurnChange(to player: Player) {
+        updateCurrentPlayerDisplay()
+        updateTurnHighlights()
+
+        if isAIPlayer(player) {
+            showMessage("\(player.color.name) is thinking...")
+            checkAndPerformAITurn()
+        } else {
+            showMessage("Tap dice to roll!")
+            diceNode.showGlow(color: player.color)
+        }
+    }
+
     private func checkAndPerformAITurn() {
         guard gameEngine.phase == .rolling else { return }
         guard isAIPlayer(gameEngine.currentPlayer) else { return }
 
-        // AI rolls dice after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + aiRollDelay) { [weak self] in
+        // Show glow for 0.5s then auto-roll
+        diceNode.showGlow(color: gameEngine.currentPlayer.color)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + aiGlowDelay) { [weak self] in
             guard let self = self else { return }
             guard self.gameEngine.phase == .rolling else { return }
             guard self.isAIPlayer(self.gameEngine.currentPlayer) else { return }
@@ -469,7 +520,7 @@ class GameScene: SKScene {
             if isAIPlayer(gameEngine.currentPlayer) {
                 checkAndPerformAITurn()
             } else {
-                diceNode.showRollPrompt()
+                diceNode.showGlow(color: gameEngine.currentPlayer.color)
             }
         } else if gameEngine.phase == .gameOver {
             showGameOver()
@@ -550,7 +601,9 @@ class GameScene: SKScene {
 
         // Reset UI
         clearHighlights()
+        clearTurnHighlights()
         diceNode.showValue(1)
+        diceNode.hideGlow()
         diceNode.resetAppearance()
 
         gameEngine.startGame()
@@ -568,19 +621,24 @@ class GameScene: SKScene {
 extension GameScene: GameEngineDelegate {
     func gameDidStart() {
         showMessage("Game started! Roll the dice.", duration: 2)
-        diceNode.showRollPrompt()
+        updateTurnHighlights()
+
+        if isAIPlayer(gameEngine.currentPlayer) {
+            checkAndPerformAITurn()
+        } else {
+            diceNode.showGlow(color: gameEngine.currentPlayer.color)
+        }
     }
 
     func turnDidChange(to player: Player) {
-        updateCurrentPlayerDisplay()
-
-        if isAIPlayer(player) {
-            showMessage("\(player.color.name) is thinking...")
-            checkAndPerformAITurn()
-        } else {
-            showMessage("Tap dice to roll!")
-            diceNode.showRollPrompt()
+        // If no valid moves occurred, defer the turn change until after the dice
+        // animation finishes and the result is held on screen
+        if noValidMovesOccurred {
+            pendingTurnPlayer = player
+            return
         }
+
+        executeTurnChange(to: player)
     }
 
     func diceDidRoll(value: Int) {
@@ -621,15 +679,13 @@ extension GameScene: GameEngineDelegate {
 
     func gameDidEnd(winner: Player) {
         showMessage("")
+        clearTurnHighlights()
         // Game over UI handled in afterTokenMove
     }
 
     func noValidMoves(for player: Player) {
-        if isAIPlayer(player) {
-            showMessage("\(player.color.name) has no valid moves.", duration: 1.0)
-        } else {
-            showMessage("No valid moves. Turn skipped.", duration: 1.5)
-        }
+        // Defer the message and turn change — shown after dice animation completes
+        noValidMovesOccurred = true
     }
 
     func turnVoided(player: Player, reason: String) {

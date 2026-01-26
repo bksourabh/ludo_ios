@@ -9,6 +9,9 @@ class BoardNode: SKNode {
     private let backgroundColor = SKColor(white: 0.95, alpha: 1.0)
     private let lineColor = SKColor(white: 0.3, alpha: 1.0)
 
+    private var yardHighlightNode: SKShapeNode?
+    private var currentHighlightedColor: PlayerColor?
+
     init(size: CGFloat) {
         self.boardSize = size
         self.cellSize = size / 15.0
@@ -310,5 +313,54 @@ class BoardNode: SKNode {
     /// Get the LudoBoard for position calculations
     func getBoard() -> LudoBoard {
         return ludoBoard
+    }
+
+    // MARK: - Yard Highlighting
+
+    /// Highlight a player's yard with a glowing effect
+    func highlightYard(for color: PlayerColor) {
+        // Remove existing highlight if any
+        unhighlightYard()
+
+        currentHighlightedColor = color
+        let yardSize = cellSize * 6
+
+        // Get yard position based on color
+        let (startCol, startRow): (Int, Int)
+        switch color {
+        case .red:
+            startCol = 0; startRow = 0
+        case .green:
+            startCol = 0; startRow = 9
+        case .yellow:
+            startCol = 9; startRow = 9
+        case .blue:
+            startCol = 9; startRow = 0
+        }
+
+        let x = -boardSize/2 + CGFloat(startCol) * cellSize
+        let y = -boardSize/2 + CGFloat(startRow) * cellSize
+
+        // Create glow highlight around the yard
+        yardHighlightNode = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 4)
+        yardHighlightNode?.fillColor = .clear
+        yardHighlightNode?.strokeColor = color.color
+        yardHighlightNode?.lineWidth = 4
+        yardHighlightNode?.glowWidth = 8
+        yardHighlightNode?.zPosition = 5
+        addChild(yardHighlightNode!)
+
+        // Add pulsing animation
+        let fadeOut = SKAction.fadeAlpha(to: 0.4, duration: 0.6)
+        let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.6)
+        let pulse = SKAction.sequence([fadeOut, fadeIn])
+        yardHighlightNode?.run(SKAction.repeatForever(pulse))
+    }
+
+    /// Remove yard highlight
+    func unhighlightYard() {
+        yardHighlightNode?.removeFromParent()
+        yardHighlightNode = nil
+        currentHighlightedColor = nil
     }
 }

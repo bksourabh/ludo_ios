@@ -7,10 +7,18 @@ class TokenNode: SKNode {
 
     private var bodyNode: SKShapeNode!
     private var highlightNode: SKShapeNode?
+    private var turnGlowNode: SKShapeNode?
 
     var isHighlighted: Bool = false {
         didSet {
             updateHighlight()
+        }
+    }
+
+    /// Whether this token's player is the current turn player
+    var isTurnActive: Bool = false {
+        didSet {
+            updateTurnGlow()
         }
     }
 
@@ -79,6 +87,30 @@ class TokenNode: SKNode {
         } else {
             highlightNode?.removeFromParent()
             highlightNode = nil
+        }
+    }
+
+    private func updateTurnGlow() {
+        if isTurnActive {
+            if turnGlowNode == nil {
+                let radius = size * 0.55
+                turnGlowNode = SKShapeNode(circleOfRadius: radius)
+                turnGlowNode?.fillColor = .clear
+                turnGlowNode?.strokeColor = token.color.color
+                turnGlowNode?.lineWidth = 2
+                turnGlowNode?.zPosition = 8
+                turnGlowNode?.glowWidth = 6
+                addChild(turnGlowNode!)
+
+                // Subtle pulse animation
+                let fadeOut = SKAction.fadeAlpha(to: 0.5, duration: 0.7)
+                let fadeIn = SKAction.fadeAlpha(to: 1.0, duration: 0.7)
+                let pulse = SKAction.sequence([fadeOut, fadeIn])
+                turnGlowNode?.run(SKAction.repeatForever(pulse))
+            }
+        } else {
+            turnGlowNode?.removeFromParent()
+            turnGlowNode = nil
         }
     }
 
