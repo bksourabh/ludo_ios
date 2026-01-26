@@ -445,6 +445,21 @@ class MenuScene: SKScene {
     }
 
     private func togglePlayerType(_ color: PlayerColor) {
+        let currentlyHuman = gameConfig.isHuman(color)
+
+        // Prevent toggling to computer if this is the last human player
+        if currentlyHuman && gameConfig.humanPlayers.count <= 1 {
+            // Shake the button to indicate it can't be changed
+            if let button = playerButtons[color] {
+                let moveLeft = SKAction.moveBy(x: -5, y: 0, duration: 0.05)
+                let moveRight = SKAction.moveBy(x: 10, y: 0, duration: 0.1)
+                let moveBack = SKAction.moveBy(x: -5, y: 0, duration: 0.05)
+                let shake = SKAction.sequence([moveLeft, moveRight, moveBack])
+                button.run(SKAction.repeat(shake, count: 2))
+            }
+            return
+        }
+
         switch color {
         case .red:
             gameConfig.redPlayer = gameConfig.redPlayer == .human ? .computer : .human
