@@ -24,6 +24,7 @@ class OnlineGameScene: SKScene {
     private var boardNode: BoardNode!
     private var diceNode: DiceNode!
     private var tokenNodes: [String: TokenNode] = [:]
+    private var stackedTokenNodes: [Int: StackedTokenNode] = [:] // Key is track position
 
     // UI Elements
     private var currentPlayerLabel: SKLabelNode!
@@ -67,6 +68,9 @@ class OnlineGameScene: SKScene {
         setupMultiplayerController()
         setupTokens()
         setupUI()
+
+        // Stop menu music when game starts
+        MusicManager.shared.stopBackgroundMusic()
 
         gameEngine.startGame()
 
@@ -239,6 +243,9 @@ class OnlineGameScene: SKScene {
         let newDicePosition = dicePosition(for: player.color)
         moveDice(to: newDicePosition)
 
+        // Update stacked token glows for the new turn
+        updateStackedTokenGlows()
+
         if multiplayerController.isLocalPlayerTurn {
             hideWaitingOverlay()
             if gameEngine.phase == .rolling {
@@ -276,6 +283,101 @@ class OnlineGameScene: SKScene {
     private func clearHighlights() {
         for (_, tokenNode) in tokenNodes {
             tokenNode.isHighlighted = false
+        }
+    }
+
+    // MARK: - Token Stacking
+
+    /// Update token stacking after a move - groups tokens at same positions
+    private func updateTokenStacking() {
+        let currentTurnColor = gameEngine.currentPlayer.color
+
+        // Find all tokens on the track grouped by position
+        var tokensByPosition: [Int: [Token]] = [:]
+
+        for player in gameEngine.gameState.players {
+            for token in player.tokens {
+                if case .onTrack(let position) = token.state {
+                    if tokensByPosition[position] == nil {
+                        tokensByPosition[position] = []
+                    }
+                    tokensByPosition[position]?.append(token)
+                }
+            }
+        }
+
+        // Track which positions need stacked views
+        var positionsWithStacks = Set<Int>()
+
+        for (position, tokens) in tokensByPosition {
+            // Get unique colors at this position
+            let uniqueColors = Set(tokens.map { $0.color })
+
+            if uniqueColors.count >= 2 {
+                positionsWithStacks.insert(position)
+
+                // Hide individual token nodes for tokens at this position
+                for token in tokens {
+                    tokenNodes[token.identifier]?.isHidden = true
+                }
+
+                // Create or update stacked token node
+                if let stackedNode = stackedTokenNodes[position] {
+                    stackedNode.update(with: tokens, currentTurnColor: currentTurnColor)
+                } else {
+                    let stackedNode = StackedTokenNode(size: tokenSize)
+                    stackedNode.update(with: tokens, currentTurnColor: currentTurnColor)
+
+                    // Position the stacked node
+                    let screenPos = gameEngine.board.screenPosition(forTrackPosition: position)
+                    stackedNode.position = CGPoint(
+                        x: screenPos.x,
+                        y: screenPos.y + size.height * 0.05
+                    )
+                    stackedNode.zPosition = 55
+                    addChild(stackedNode)
+                    stackedTokenNodes[position] = stackedNode
+                }
+            } else {
+                // Only one color at this position - show individual tokens
+                for token in tokens {
+                    tokenNodes[token.identifier]?.isHidden = false
+                }
+            }
+        }
+
+        // Remove stacked nodes for positions that no longer have multiple colors
+        let positionsToRemove = stackedTokenNodes.keys.filter { !positionsWithStacks.contains($0) }
+        for position in positionsToRemove {
+            stackedTokenNodes[position]?.removeFromParent()
+            stackedTokenNodes.removeValue(forKey: position)
+
+            // Show individual tokens at this position
+            if let tokens = tokensByPosition[position] {
+                for token in tokens {
+                    tokenNodes[token.identifier]?.isHidden = false
+                }
+            }
+        }
+
+        // Make sure tokens not on track are visible
+        for player in gameEngine.gameState.players {
+            for token in player.tokens {
+                switch token.state {
+                case .inYard, .onHomePath, .home:
+                    tokenNodes[token.identifier]?.isHidden = false
+                case .onTrack:
+                    break // Handled above
+                }
+            }
+        }
+    }
+
+    /// Update stacked token glows when turn changes
+    private func updateStackedTokenGlows() {
+        let currentTurnColor = gameEngine.currentPlayer.color
+        for (_, stackedNode) in stackedTokenNodes {
+            stackedNode.updateGlow(for: currentTurnColor)
         }
     }
 
@@ -408,12 +510,27 @@ class OnlineGameScene: SKScene {
     private func handleTokenSelection(at location: CGPoint) {
         let movable = gameEngine.movableTokens()
 
+        // First check individual token nodes
         for token in movable {
             guard let tokenNode = tokenNodes[token.identifier] else { continue }
 
-            if tokenNode.isPointInside(location) {
+            // Only check visible tokens (not hidden in a stack)
+            if !tokenNode.isHidden && tokenNode.isPointInside(location) {
                 moveToken(token)
                 return
+            }
+        }
+
+        // Check stacked token nodes
+        for (_, stackedNode) in stackedTokenNodes {
+            if stackedNode.isPointInside(location) {
+                // Find the movable token in this stack for the current player
+                let currentColor = gameEngine.currentPlayer.color
+                if let token = stackedNode.token(for: currentColor),
+                   movable.contains(where: { $0.identifier == token.identifier }) {
+                    moveToken(token)
+                    return
+                }
             }
         }
 
@@ -486,9 +603,19 @@ class OnlineGameScene: SKScene {
             tokenNodes[token.identifier]?.animateReachHome()
         case .capturedOpponent(let captured):
             animateCapturedToken(captured)
+        case .success:
+            // Check if token landed on a safe spot
+            if case .onTrack(let position) = token.state {
+                if PlayerColor.safeSquares.contains(position) {
+                    MusicManager.shared.playSafeSound()
+                }
+            }
         default:
             break
         }
+
+        // Update token stacking after the move
+        updateTokenStacking()
 
         // Check game phase after move
         if gameEngine.phase == .rolling {
@@ -740,6 +867,7 @@ extension OnlineGameScene: GameEngineDelegate {
 
     func tokenDidGetCaptured(token: Token, by: Token) {
         showMessage("\(by.color.name) captured \(token.color.name)!", duration: 2)
+        MusicManager.shared.playEatSound()
     }
 
     func playerDidGetBonusRoll(player: Player, reason: BonusRollReason) {
@@ -768,6 +896,8 @@ extension OnlineGameScene: GameEngineDelegate {
 
     func gameDidEnd(winner: Player) {
         showMessage("")
+        // Play applause for 5 seconds
+        MusicManager.shared.playApplause()
     }
 
     func noValidMoves(for player: Player) {
@@ -813,10 +943,20 @@ extension OnlineGameScene: MultiplayerGameControllerDelegate {
                     tokenNode.animateReachHome()
                 case .capturedOpponent(let captured):
                     self.animateCapturedToken(captured)
+                    MusicManager.shared.playEatSound()
+                case .success:
+                    // Check if token landed on a safe spot
+                    if case .onTrack(let position) = to {
+                        if PlayerColor.safeSquares.contains(position) {
+                            MusicManager.shared.playSafeSound()
+                        }
+                    }
                 default:
                     break
                 }
 
+                // Update token stacking after remote player move
+                self.updateTokenStacking()
                 self.updateTurnUI()
             }
         }
@@ -846,6 +986,7 @@ extension OnlineGameScene: MultiplayerGameControllerDelegate {
     }
 
     func multiplayerControllerGameDidEnd(_ controller: MultiplayerGameController) {
+        MusicManager.shared.playApplause()
         showGameOver()
     }
 

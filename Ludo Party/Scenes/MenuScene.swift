@@ -70,6 +70,10 @@ class MenuScene: SKScene {
         setupModeSelectionUI()
         setupGameSetupUI()
         updateVisibility()
+
+        // Start background music (respects device mute settings)
+        print("[MenuScene] Starting background music...")
+        MusicManager.shared.startBackgroundMusic()
     }
 
     // MARK: - Login UI
