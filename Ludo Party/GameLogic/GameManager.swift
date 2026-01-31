@@ -168,6 +168,7 @@ class GameManager: NSObject, ObservableObject {
     }
 
     /// Show Game Center dashboard
+    @available(iOS, deprecated: 26.0, message: "Use GKAccessPoint for iOS 26+")
     func showGameCenterDashboard(from viewController: UIViewController) {
         guard isGameCenterAuthenticated else { return }
 
@@ -188,6 +189,7 @@ class GameManager: NSObject, ObservableObject {
 
 // MARK: - GKGameCenterControllerDelegate
 
+@available(iOS, deprecated: 26.0, message: "Use GKAccessPoint for iOS 26+")
 extension GameManager: GKGameCenterControllerDelegate {
     func gameCenterViewControllerDidFinish(_ gameCenterViewController: GKGameCenterViewController) {
         gameCenterViewController.dismiss(animated: true)

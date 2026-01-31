@@ -54,16 +54,6 @@ class TokenNode: SKNode {
         innerCircle.position = CGPoint(x: -radius * 0.15, y: radius * 0.15)
         innerCircle.zPosition = 11
         addChild(innerCircle)
-
-        // Token number/index
-        let label = SKLabelNode(text: "\(token.index + 1)")
-        label.fontName = "Helvetica-Bold"
-        label.fontSize = size * 0.3
-        label.fontColor = .white
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        label.zPosition = 12
-        addChild(label)
     }
 
     private func updateHighlight() {
@@ -133,23 +123,44 @@ class TokenNode: SKNode {
         }
     }
 
-    /// Animate capture (disappear and reappear in yard)
+    /// Animate capture (visible movement back to yard)
     func animateCapture(to yardPosition: CGPoint, completion: (() -> Void)? = nil) {
-        // Shrink and fade
-        let shrink = SKAction.scale(to: 0.1, duration: 0.2)
-        let fade = SKAction.fadeOut(withDuration: 0.2)
-        let disappear = SKAction.group([shrink, fade])
+        // Flash red to indicate capture
+        let flashRed = SKAction.colorize(with: .red, colorBlendFactor: 0.8, duration: 0.1)
+        let flashBack = SKAction.colorize(withColorBlendFactor: 0, duration: 0.1)
+        let flash = SKAction.sequence([flashRed, flashBack, flashRed, flashBack])
 
-        // Move to yard
-        let move = SKAction.move(to: yardPosition, duration: 0.01)
+        // Shrink slightly while moving
+        let shrinkDown = SKAction.scale(to: 0.7, duration: 0.1)
 
-        // Grow and appear
-        let grow = SKAction.scale(to: 1.0, duration: 0.3)
-        let appear = SKAction.fadeIn(withDuration: 0.3)
-        let reappear = SKAction.group([grow, appear])
+        // Calculate arc movement back to yard
+        let currentPos = self.position
+        let midPoint = CGPoint(
+            x: (currentPos.x + yardPosition.x) / 2,
+            y: max(currentPos.y, yardPosition.y) + 80  // Arc above both points
+        )
 
-        let sequence = SKAction.sequence([disappear, move, reappear])
-        run(sequence) {
+        // Move in an arc: first to midpoint (going up), then to yard (going down)
+        let moveToMid = SKAction.move(to: midPoint, duration: 0.3)
+        moveToMid.timingMode = .easeOut
+        let moveToYard = SKAction.move(to: yardPosition, duration: 0.3)
+        moveToYard.timingMode = .easeIn
+        let arcMove = SKAction.sequence([moveToMid, moveToYard])
+
+        // Grow back to normal size at the end
+        let growBack = SKAction.scale(to: 1.0, duration: 0.2)
+
+        // Bounce effect when landing
+        let bounceUp = SKAction.scale(to: 1.15, duration: 0.1)
+        let bounceDown = SKAction.scale(to: 1.0, duration: 0.1)
+        let bounce = SKAction.sequence([bounceUp, bounceDown])
+
+        // Combine: flash + shrink, then arc move, then grow + bounce
+        let startEffects = SKAction.group([flash, shrinkDown])
+        let endEffects = SKAction.sequence([growBack, bounce])
+
+        let fullSequence = SKAction.sequence([startEffects, arcMove, endEffects])
+        run(fullSequence) {
             completion?()
         }
     }

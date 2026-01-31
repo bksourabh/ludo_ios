@@ -189,8 +189,6 @@ class MenuScene: SKScene {
         modeTitle.position = CGPoint(x: 0, y: size.height * 0.14)
         modeSelectionContainer.addChild(modeTitle)
 
-        let buttonWidth = size.width * 0.75
-
         // Play Offline button
         playOfflineButton = createModeButton(
             text: "Play Offline",

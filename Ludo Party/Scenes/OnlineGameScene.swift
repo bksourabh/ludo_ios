@@ -606,8 +606,8 @@ class OnlineGameScene: SKScene {
         switch result {
         case .reachedHome:
             tokenNodes[token.identifier]?.animateReachHome()
-            // Play applause for 2 seconds when token reaches home
-            MusicManager.shared.playTokenHomeApplause()
+            // Play in_home sound when token reaches home
+            MusicManager.shared.playInHomeSound()
         case .capturedOpponent(let captured):
             animateCapturedToken(captured)
         case .success:
@@ -916,8 +916,8 @@ extension OnlineGameScene: GameEngineDelegate {
 
     func gameDidEnd(winner: Player) {
         showMessage("")
-        // Play applause for 5 seconds
-        MusicManager.shared.playApplause()
+        // Play in_home sound first, then applause
+        MusicManager.shared.playGameFinishSounds()
     }
 
     func noValidMoves(for player: Player) {
@@ -961,8 +961,8 @@ extension OnlineGameScene: MultiplayerGameControllerDelegate {
                 switch result {
                 case .reachedHome:
                     tokenNode.animateReachHome()
-                    // Play applause for 2 seconds when token reaches home
-                    MusicManager.shared.playTokenHomeApplause()
+                    // Play in_home sound when token reaches home
+                    MusicManager.shared.playInHomeSound()
                 case .capturedOpponent(let captured):
                     self.animateCapturedToken(captured)
                     MusicManager.shared.playEatSound()
@@ -1012,7 +1012,7 @@ extension OnlineGameScene: MultiplayerGameControllerDelegate {
     }
 
     func multiplayerControllerGameDidEnd(_ controller: MultiplayerGameController) {
-        MusicManager.shared.playApplause()
+        MusicManager.shared.playGameFinishSounds()
         showGameOver()
     }
 

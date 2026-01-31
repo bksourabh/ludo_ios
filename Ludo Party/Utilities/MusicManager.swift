@@ -149,9 +149,19 @@ class MusicManager {
         playSoundEffect("applause", duration: 5.0)
     }
 
-    /// Play applause sound for token reaching home (2 seconds)
-    func playTokenHomeApplause() {
-        playSoundEffect("applause", duration: 2.0)
+    /// Play in_home sound when token reaches home
+    func playInHomeSound() {
+        playSoundEffect("in_home")
+    }
+
+    /// Play in_home sound followed by applause for game finish
+    /// Plays in_home first, then applause after a short delay
+    func playGameFinishSounds() {
+        playInHomeSound()
+        // Play applause after in_home sound (delay of 1.5 seconds)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+            self?.playApplause()
+        }
     }
 
     /// Play eat sound when a token captures another
