@@ -69,7 +69,7 @@ class GameScene: SKScene {
     // MARK: - Setup Methods
 
     private func setupBoard() {
-        boardNode = BoardNode(size: boardSize)
+        boardNode = BoardNode(size: boardSize, gameConfig: gameConfig)
         boardNode.position = CGPoint(x: 0, y: size.height * 0.05)
         boardNode.zPosition = 0
         addChild(boardNode)

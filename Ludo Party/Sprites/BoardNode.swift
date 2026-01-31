@@ -5,6 +5,7 @@ class BoardNode: SKNode {
     let boardSize: CGFloat
     let ludoBoard: LudoBoard
     let cellSize: CGFloat
+    var gameConfig: GameConfig?
 
     private let backgroundColor = SKColor(white: 0.95, alpha: 1.0)
     private let lineColor = SKColor(white: 0.3, alpha: 1.0)
@@ -12,10 +13,11 @@ class BoardNode: SKNode {
     private var yardHighlightNode: SKShapeNode?
     private var currentHighlightedColor: PlayerColor?
 
-    init(size: CGFloat) {
+    init(size: CGFloat, gameConfig: GameConfig? = nil) {
         self.boardSize = size
         self.cellSize = size / 15.0
         self.ludoBoard = LudoBoard(boardSize: size)
+        self.gameConfig = gameConfig
         super.init()
 
         // Set board origin for position calculations (bottom-left of board)
@@ -75,6 +77,9 @@ class BoardNode: SKNode {
 
         // Draw yard token circles
         drawYardCircles()
+
+        // Draw player type indicators (human/AI)
+        drawPlayerTypeIndicators()
     }
 
     private func drawYards() {
@@ -321,6 +326,191 @@ class BoardNode: SKNode {
     /// Get the LudoBoard for position calculations
     func getBoard() -> LudoBoard {
         return ludoBoard
+    }
+
+    // MARK: - Player Type Indicators
+
+    private func drawPlayerTypeIndicators() {
+        guard let config = gameConfig else { return }
+
+        for color in PlayerColor.allCases {
+            let isHuman = config.isHuman(color)
+            drawPlayerTypeIndicator(for: color, isHuman: isHuman)
+        }
+    }
+
+    private func drawPlayerTypeIndicator(for color: PlayerColor, isHuman: Bool) {
+        let yardInset = cellSize * 0.5
+        let yardSize = cellSize * 6 - yardInset * 2
+
+        // Get yard position based on color
+        let (startCol, startRow): (Int, Int)
+        switch color {
+        case .red:
+            startCol = 0; startRow = 0
+        case .green:
+            startCol = 0; startRow = 9
+        case .yellow:
+            startCol = 9; startRow = 9
+        case .blue:
+            startCol = 9; startRow = 0
+        }
+
+        let yardX = -boardSize/2 + CGFloat(startCol) * cellSize + yardInset
+        let yardY = -boardSize/2 + CGFloat(startRow) * cellSize + yardInset
+
+        // Badge size and position (top-left corner of yard)
+        let badgeSize = cellSize * 0.9
+        let badgeMargin = cellSize * 0.15
+        let badgeX = yardX + badgeMargin + badgeSize/2
+        let badgeY = yardY + yardSize - badgeMargin - badgeSize/2
+
+        // Create badge background with frosted glass effect
+        let badgeBg = SKShapeNode(circleOfRadius: badgeSize/2)
+        badgeBg.position = CGPoint(x: badgeX, y: badgeY)
+        badgeBg.fillColor = SKColor(white: 1.0, alpha: 0.95)
+        badgeBg.strokeColor = color.color
+        badgeBg.lineWidth = 2.5
+        badgeBg.zPosition = 6
+        addChild(badgeBg)
+
+        // Add subtle shadow
+        let shadow = SKShapeNode(circleOfRadius: badgeSize/2 + 1)
+        shadow.position = CGPoint(x: badgeX + 1, y: badgeY - 1)
+        shadow.fillColor = SKColor(white: 0, alpha: 0.15)
+        shadow.strokeColor = .clear
+        shadow.zPosition = 5.5
+        addChild(shadow)
+
+        // Create the icon
+        let iconSize = badgeSize * 0.55
+        let icon: SKNode
+        if isHuman {
+            icon = createHumanIcon(size: iconSize, color: color)
+        } else {
+            icon = createComputerIcon(size: iconSize, color: color)
+        }
+        icon.position = CGPoint(x: badgeX, y: badgeY)
+        icon.zPosition = 7
+        addChild(icon)
+
+        // Add subtle label below icon
+        let label = SKLabelNode(fontNamed: "Helvetica-Bold")
+        label.text = isHuman ? "YOU" : "CPU"
+        label.fontSize = badgeSize * 0.22
+        label.fontColor = color.color.withAlphaComponent(0.9)
+        label.position = CGPoint(x: badgeX, y: badgeY - badgeSize * 0.28)
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        label.zPosition = 7
+        addChild(label)
+    }
+
+    private func createHumanIcon(size: CGFloat, color: PlayerColor) -> SKNode {
+        let container = SKNode()
+
+        // Head (circle)
+        let headRadius = size * 0.28
+        let head = SKShapeNode(circleOfRadius: headRadius)
+        head.position = CGPoint(x: 0, y: size * 0.18)
+        head.fillColor = color.color
+        head.strokeColor = color.color.withAlphaComponent(0.8)
+        head.lineWidth = 1
+        container.addChild(head)
+
+        // Body (shoulders arc)
+        let bodyPath = CGMutablePath()
+        let bodyWidth = size * 0.7
+        let bodyHeight = size * 0.35
+
+        // Create rounded shoulders shape
+        bodyPath.move(to: CGPoint(x: -bodyWidth/2, y: -size * 0.15))
+        bodyPath.addQuadCurve(
+            to: CGPoint(x: bodyWidth/2, y: -size * 0.15),
+            control: CGPoint(x: 0, y: -size * 0.05)
+        )
+        bodyPath.addLine(to: CGPoint(x: bodyWidth/2 * 0.7, y: -size * 0.15 - bodyHeight))
+        bodyPath.addQuadCurve(
+            to: CGPoint(x: -bodyWidth/2 * 0.7, y: -size * 0.15 - bodyHeight),
+            control: CGPoint(x: 0, y: -size * 0.15 - bodyHeight * 0.8)
+        )
+        bodyPath.closeSubpath()
+
+        let body = SKShapeNode(path: bodyPath)
+        body.fillColor = color.color
+        body.strokeColor = color.color.withAlphaComponent(0.8)
+        body.lineWidth = 1
+        container.addChild(body)
+
+        return container
+    }
+
+    private func createComputerIcon(size: CGFloat, color: PlayerColor) -> SKNode {
+        let container = SKNode()
+
+        // Robot head (rounded rectangle)
+        let headWidth = size * 0.65
+        let headHeight = size * 0.5
+        let headRect = CGRect(x: -headWidth/2, y: -headHeight/2 + size * 0.08, width: headWidth, height: headHeight)
+        let head = SKShapeNode(rect: headRect, cornerRadius: size * 0.08)
+        head.fillColor = color.color
+        head.strokeColor = color.color.withAlphaComponent(0.8)
+        head.lineWidth = 1
+        container.addChild(head)
+
+        // Eyes (two small circles)
+        let eyeRadius = size * 0.08
+        let eyeSpacing = size * 0.18
+        let eyeY = size * 0.15
+
+        let leftEye = SKShapeNode(circleOfRadius: eyeRadius)
+        leftEye.position = CGPoint(x: -eyeSpacing, y: eyeY)
+        leftEye.fillColor = .white
+        leftEye.strokeColor = .clear
+        container.addChild(leftEye)
+
+        let rightEye = SKShapeNode(circleOfRadius: eyeRadius)
+        rightEye.position = CGPoint(x: eyeSpacing, y: eyeY)
+        rightEye.fillColor = .white
+        rightEye.strokeColor = .clear
+        container.addChild(rightEye)
+
+        // Mouth (small rectangle grid pattern)
+        let mouthWidth = size * 0.3
+        let mouthHeight = size * 0.1
+        let mouthY = -size * 0.02
+        let mouth = SKShapeNode(rect: CGRect(x: -mouthWidth/2, y: mouthY - mouthHeight/2, width: mouthWidth, height: mouthHeight), cornerRadius: 2)
+        mouth.fillColor = .white
+        mouth.strokeColor = .clear
+        container.addChild(mouth)
+
+        // Antenna
+        let antennaHeight = size * 0.15
+        let antennaY = headHeight/2 + size * 0.08
+        let antennaLine = SKShapeNode(rect: CGRect(x: -1, y: antennaY, width: 2, height: antennaHeight))
+        antennaLine.fillColor = color.color
+        antennaLine.strokeColor = .clear
+        container.addChild(antennaLine)
+
+        let antennaBall = SKShapeNode(circleOfRadius: size * 0.06)
+        antennaBall.position = CGPoint(x: 0, y: antennaY + antennaHeight)
+        antennaBall.fillColor = color.color.withAlphaComponent(0.7)
+        antennaBall.strokeColor = color.color
+        antennaBall.lineWidth = 1
+        container.addChild(antennaBall)
+
+        // Body (smaller rectangle below head)
+        let bodyWidth = size * 0.5
+        let bodyHeight = size * 0.25
+        let bodyY = -headHeight/2 - size * 0.02
+        let bodyRect = CGRect(x: -bodyWidth/2, y: bodyY - bodyHeight, width: bodyWidth, height: bodyHeight)
+        let body = SKShapeNode(rect: bodyRect, cornerRadius: size * 0.04)
+        body.fillColor = color.color
+        body.strokeColor = color.color.withAlphaComponent(0.8)
+        body.lineWidth = 1
+        container.addChild(body)
+
+        return container
     }
 
     // MARK: - Yard Highlighting

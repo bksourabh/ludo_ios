@@ -74,15 +74,17 @@ class OnlineGameScene: SKScene {
 
     private func calculateSizes() {
         let screenMin = min(size.width, size.height)
-        boardSize = screenMin * 0.85
-        tokenSize = boardSize / 15 * 0.9
+        boardSize = screenMin * 0.95
+        tokenSize = boardSize / 15 * 1.0
         diceSize = screenMin * 0.12
     }
 
     // MARK: - Setup Methods
 
     private func setupBoard() {
-        boardNode = BoardNode(size: boardSize)
+        // In online mode, all players are human (real players)
+        let onlineConfig = GameConfig.allHuman
+        boardNode = BoardNode(size: boardSize, gameConfig: onlineConfig)
         boardNode.position = CGPoint(x: 0, y: size.height * 0.05)
         boardNode.zPosition = 0
         addChild(boardNode)
