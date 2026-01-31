@@ -38,7 +38,7 @@ class GameScene: SKScene {
     // AI timing
     private let aiGlowDelay: TimeInterval = 0.5
     private let aiMoveDelay: TimeInterval = 0.5
-    private let noMovesHoldDelay: TimeInterval = 1.0
+    private let noMovesHoldDelay: TimeInterval = 0.5
 
     // Deferred turn change tracking (for no valid moves case)
     private var noValidMovesOccurred: Bool = false
@@ -569,6 +569,8 @@ class GameScene: SKScene {
     // MARK: - Game Actions
 
     private func rollDice() {
+        // Disable dice immediately to prevent double-taps
+        diceNode.isEnabled = false
         diceNode.hideGlow()
 
         let value = gameEngine.rollDice()
@@ -579,11 +581,14 @@ class GameScene: SKScene {
     }
 
     private func afterDiceRoll(value: Int) {
-        // Handle deferred "no valid moves" — hold dice result for 1 second
+        // Handle deferred "no valid moves" — hold dice result for 0.5 seconds
         if let pendingPlayer = pendingTurnPlayer {
             pendingTurnPlayer = nil
             noValidMovesOccurred = false
             currentPlayerLabel.text = "No possible move"
+
+            // Keep dice disabled during the wait
+            diceNode.isEnabled = false
 
             DispatchQueue.main.asyncAfter(deadline: .now() + noMovesHoldDelay) { [weak self] in
                 self?.executeTurnChange(to: pendingPlayer)
@@ -638,6 +643,7 @@ class GameScene: SKScene {
             checkAndPerformAITurn()
         } else {
             showMessage("Tap dice to roll!")
+            diceNode.isEnabled = true
             diceNode.showGlow(color: player.color)
         }
     }
@@ -645,6 +651,9 @@ class GameScene: SKScene {
     private func checkAndPerformAITurn() {
         guard gameEngine.phase == .rolling else { return }
         guard isAIPlayer(gameEngine.currentPlayer) else { return }
+
+        // Disable dice during AI turn - not clickable by human
+        diceNode.isEnabled = false
 
         // Show glow for 0.5s then auto-roll
         diceNode.showGlow(color: gameEngine.currentPlayer.color)
@@ -683,12 +692,18 @@ class GameScene: SKScene {
         switch result {
         case .reachedHome:
             tokenNodes[token.identifier]?.animateReachHome()
+            // Play applause for 2 seconds when token reaches home
+            MusicManager.shared.playTokenHomeApplause()
         case .capturedOpponent(let captured):
             animateCapturedToken(captured)
         case .success:
             // Check if token landed on a safe spot
+            // Don't play safe sound if token just came out of yard onto its start position
             if case .onTrack(let position) = token.state {
-                if PlayerColor.safeSquares.contains(position) {
+                let justLeftYard = (previousState == .inYard)
+                let isOwnStartPosition = (position == token.color.startPosition)
+
+                if PlayerColor.safeSquares.contains(position) && !(justLeftYard && isOwnStartPosition) {
                     MusicManager.shared.playSafeSound()
                 }
             }
@@ -701,11 +716,18 @@ class GameScene: SKScene {
 
         // Check game phase after move
         if gameEngine.phase == .rolling {
-            if isAIPlayer(gameEngine.currentPlayer) {
-                checkAndPerformAITurn()
-            } else {
-                diceNode.showGlow(color: gameEngine.currentPlayer.color)
+            // Only trigger next roll if this is a bonus roll for the SAME player
+            // Turn changes to a different player are handled by turnDidChange delegate
+            if token.color == gameEngine.currentPlayer.color {
+                if isAIPlayer(gameEngine.currentPlayer) {
+                    checkAndPerformAITurn()
+                } else {
+                    diceNode.isEnabled = true
+                    diceNode.showGlow(color: gameEngine.currentPlayer.color)
+                }
             }
+            // If token.color != currentPlayer.color, the turn already changed
+            // and turnDidChange already triggered the new player's turn
         } else if gameEngine.phase == .gameOver {
             showGameOver()
         }
@@ -821,6 +843,7 @@ extension GameScene: GameEngineDelegate {
         if isAIPlayer(gameEngine.currentPlayer) {
             checkAndPerformAITurn()
         } else {
+            diceNode.isEnabled = true
             diceNode.showGlow(color: gameEngine.currentPlayer.color)
         }
     }

@@ -57,7 +57,7 @@ class MusicManager {
         do {
             backgroundMusicPlayer = try AVAudioPlayer(contentsOf: finalURL)
             backgroundMusicPlayer?.numberOfLoops = -1  // Loop indefinitely
-            backgroundMusicPlayer?.volume = 0.5  // 50% volume
+            backgroundMusicPlayer?.volume = 1.0  // 100% volume (based on device volume)
             backgroundMusicPlayer?.prepareToPlay()
 
             let success = backgroundMusicPlayer?.play() ?? false
@@ -147,6 +147,11 @@ class MusicManager {
     /// Play applause sound for game finish (5 seconds)
     func playApplause() {
         playSoundEffect("applause", duration: 5.0)
+    }
+
+    /// Play applause sound for token reaching home (2 seconds)
+    func playTokenHomeApplause() {
+        playSoundEffect("applause", duration: 2.0)
     }
 
     /// Play eat sound when a token captures another

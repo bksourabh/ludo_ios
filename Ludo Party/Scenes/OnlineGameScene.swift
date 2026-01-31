@@ -250,9 +250,12 @@ class OnlineGameScene: SKScene {
             hideWaitingOverlay()
             if gameEngine.phase == .rolling {
                 showMessage("Tap dice to roll!")
+                diceNode.isEnabled = true
                 diceNode.showGlow(color: player.color)
             }
         } else {
+            // Disable dice when it's not local player's turn
+            diceNode.isEnabled = false
             showWaitingOverlay(for: player.color)
             checkAndPerformAITurn()
         }
@@ -548,6 +551,8 @@ class OnlineGameScene: SKScene {
     private func rollDice() {
         guard multiplayerController.isLocalPlayerTurn else { return }
 
+        // Disable dice immediately to prevent double-taps
+        diceNode.isEnabled = false
         diceNode.hideGlow()
         let value = multiplayerController.localPlayerRollDice()
 
@@ -601,12 +606,18 @@ class OnlineGameScene: SKScene {
         switch result {
         case .reachedHome:
             tokenNodes[token.identifier]?.animateReachHome()
+            // Play applause for 2 seconds when token reaches home
+            MusicManager.shared.playTokenHomeApplause()
         case .capturedOpponent(let captured):
             animateCapturedToken(captured)
         case .success:
             // Check if token landed on a safe spot
+            // Don't play safe sound if token just came out of yard onto its start position
             if case .onTrack(let position) = token.state {
-                if PlayerColor.safeSquares.contains(position) {
+                let justLeftYard = (previousState == .inYard)
+                let isOwnStartPosition = (position == token.color.startPosition)
+
+                if PlayerColor.safeSquares.contains(position) && !(justLeftYard && isOwnStartPosition) {
                     MusicManager.shared.playSafeSound()
                 }
             }
@@ -619,7 +630,13 @@ class OnlineGameScene: SKScene {
 
         // Check game phase after move
         if gameEngine.phase == .rolling {
-            updateTurnUI()
+            // Only trigger next roll if this is a bonus roll for the SAME player
+            // Turn changes to a different player are handled by turnDidChange delegate
+            if token.color == gameEngine.currentPlayer.color {
+                updateTurnUI()
+            }
+            // If token.color != currentPlayer.color, the turn already changed
+            // and turnDidChange already triggered the new player's turn
         } else if gameEngine.phase == .gameOver {
             showGameOver()
         }
@@ -657,6 +674,9 @@ class OnlineGameScene: SKScene {
     }
 
     private func performAITurn(for color: PlayerColor) {
+        // Ensure dice is disabled during AI turn
+        diceNode.isEnabled = false
+
         // Roll dice
         let value = gameEngine.rollDice()
 
@@ -941,13 +961,19 @@ extension OnlineGameScene: MultiplayerGameControllerDelegate {
                 switch result {
                 case .reachedHome:
                     tokenNode.animateReachHome()
+                    // Play applause for 2 seconds when token reaches home
+                    MusicManager.shared.playTokenHomeApplause()
                 case .capturedOpponent(let captured):
                     self.animateCapturedToken(captured)
                     MusicManager.shared.playEatSound()
                 case .success:
                     // Check if token landed on a safe spot
+                    // Don't play safe sound if token just came out of yard onto its start position
                     if case .onTrack(let position) = to {
-                        if PlayerColor.safeSquares.contains(position) {
+                        let justLeftYard = (from == .inYard)
+                        let isOwnStartPosition = (position == token.color.startPosition)
+
+                        if PlayerColor.safeSquares.contains(position) && !(justLeftYard && isOwnStartPosition) {
                             MusicManager.shared.playSafeSound()
                         }
                     }
