@@ -48,13 +48,14 @@ enum PlayerColor: Int, CaseIterable {
         }
     }
 
-    /// The position before entering home path (last track position before home path)
+    /// The position before entering home path (two positions before start position)
+    /// Token enters home path from this position, never stepping on the position just before start
     var homeEntryPosition: Int {
         switch self {
-        case .red: return 51     // After position 51, red enters home path
-        case .green: return 12   // After position 12, green enters home path
-        case .yellow: return 25  // After position 25, yellow enters home path
-        case .blue: return 38    // After position 38, blue enters home path
+        case .red: return 50     // Red enters home path from position 50 (2 before start at 0)
+        case .green: return 11   // Green enters home path from position 11 (2 before start at 13)
+        case .yellow: return 24  // Yellow enters home path from position 24 (2 before start at 26)
+        case .blue: return 37    // Blue enters home path from position 37 (2 before start at 39)
         }
     }
 
