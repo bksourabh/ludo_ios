@@ -61,8 +61,8 @@ class GameScene: SKScene {
     private func calculateSizes() {
         // Calculate board size based on screen
         let screenMin = min(size.width, size.height)
-        boardSize = screenMin * 0.85
-        tokenSize = boardSize / 15 * 0.9
+        boardSize = screenMin * 0.95
+        tokenSize = boardSize / 15 * 1.0
         diceSize = screenMin * 0.12
     }
 

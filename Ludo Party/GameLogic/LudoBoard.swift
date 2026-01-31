@@ -123,7 +123,7 @@ class LudoBoard {
     /// Get screen positions for the 4 tokens in a yard (perfectly centered in inner white box)
     func yardPositions(for color: PlayerColor) -> [CGPoint] {
         let center = yardInnerCenter(for: color)
-        let offset = cellSize * 1.1  // Distance from center to each token
+        let offset = cellSize * 0.85  // Distance from center to each token
 
         return [
             CGPoint(x: center.x - offset, y: center.y - offset),  // Bottom-left

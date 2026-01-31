@@ -89,12 +89,13 @@ class BoardNode: SKNode {
     }
 
     private func drawYard(startCol: Int, startRow: Int, color: PlayerColor) {
-        let yardSize = cellSize * 6
+        let yardInset = cellSize * 0.5
+        let yardSize = cellSize * 6 - yardInset * 2
 
-        // Outer colored rectangle
-        let x = -boardSize/2 + CGFloat(startCol) * cellSize
-        let y = -boardSize/2 + CGFloat(startRow) * cellSize
-        let outerRect = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize))
+        // Outer colored rectangle (inset from grid edges)
+        let x = -boardSize/2 + CGFloat(startCol) * cellSize + yardInset
+        let y = -boardSize/2 + CGFloat(startRow) * cellSize + yardInset
+        let outerRect = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 8)
         outerRect.fillColor = color.color
         outerRect.strokeColor = lineColor
         outerRect.lineWidth = 2
@@ -102,7 +103,7 @@ class BoardNode: SKNode {
         addChild(outerRect)
 
         // Inner white area (with margin)
-        let margin = cellSize * 0.8
+        let margin = cellSize * 0.6
         let innerRect = SKShapeNode(rect: CGRect(
             x: x + margin,
             y: y + margin,
@@ -186,8 +187,8 @@ class BoardNode: SKNode {
         centerBg.zPosition = -1
         addChild(centerBg)
 
-        // Draw colored triangles
-        let triangleSize = centerSize / 2
+        // Draw colored triangles (cover entire center square)
+        let triangleSize = centerSize
 
         // Red triangle (bottom, pointing up)
         drawTriangle(at: center, size: triangleSize, color: .red, rotation: 0)
@@ -300,7 +301,7 @@ class BoardNode: SKNode {
     private func drawYardCircles() {
         // Draw circles in each yard where tokens start
         // Use LudoBoard's calculated positions to ensure perfect alignment
-        let circleRadius = cellSize * 0.38
+        let circleRadius = cellSize * 0.32
 
         for color in PlayerColor.allCases {
             let positions = ludoBoard.yardCirclePositions(for: color)
@@ -330,7 +331,8 @@ class BoardNode: SKNode {
         unhighlightYard()
 
         currentHighlightedColor = color
-        let yardSize = cellSize * 6
+        let yardInset = cellSize * 0.5
+        let yardSize = cellSize * 6 - yardInset * 2
 
         // Get yard position based on color
         let (startCol, startRow): (Int, Int)
@@ -345,11 +347,11 @@ class BoardNode: SKNode {
             startCol = 9; startRow = 0
         }
 
-        let x = -boardSize/2 + CGFloat(startCol) * cellSize
-        let y = -boardSize/2 + CGFloat(startRow) * cellSize
+        let x = -boardSize/2 + CGFloat(startCol) * cellSize + yardInset
+        let y = -boardSize/2 + CGFloat(startRow) * cellSize + yardInset
 
         // Create glow highlight around the yard
-        yardHighlightNode = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 4)
+        yardHighlightNode = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 8)
         yardHighlightNode?.fillColor = .clear
         yardHighlightNode?.strokeColor = color.color
         yardHighlightNode?.lineWidth = 4
