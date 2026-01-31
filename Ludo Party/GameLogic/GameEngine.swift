@@ -30,6 +30,7 @@ class GameEngine {
     private(set) var gameState: GameState
     private(set) var board: LudoBoard
     private(set) var dice: Dice
+    var gameConfig: GameConfig
 
     var currentPlayer: Player {
         return gameState.currentPlayer
@@ -43,10 +44,11 @@ class GameEngine {
         return gameState.phase
     }
 
-    init(playerColors: [PlayerColor], boardSize: CGFloat) {
+    init(playerColors: [PlayerColor], boardSize: CGFloat, gameConfig: GameConfig = GameConfig()) {
         self.gameState = GameState(playerColors: playerColors)
         self.board = LudoBoard(boardSize: boardSize)
         self.dice = Dice()
+        self.gameConfig = gameConfig
     }
 
     // MARK: - Game Flow
@@ -62,7 +64,8 @@ class GameEngine {
     func rollDice() -> Int {
         guard gameState.phase == .rolling else { return 0 }
 
-        let value = dice.roll()
+        // Use weighted distribution if goodLuckForAll is enabled
+        let value = gameConfig.goodLuckForAll ? dice.rollWithGoodLuck() : dice.roll()
         gameState.currentDiceValue = value
         gameState.addEvent(.diceRolled(player: currentPlayer.color, value: value))
         delegate?.diceDidRoll(value: value)

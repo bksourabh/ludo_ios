@@ -205,7 +205,7 @@ class GameScene: SKScene {
     }
 
     private func setupGameEngine() {
-        gameEngine = GameEngine(playerColors: playerColors, boardSize: boardSize)
+        gameEngine = GameEngine(playerColors: playerColors, boardSize: boardSize, gameConfig: gameConfig)
         gameEngine.board.setOrigin(CGPoint(x: -boardSize/2, y: -boardSize/2))
         gameEngine.delegate = self
     }
@@ -804,7 +804,7 @@ class GameScene: SKScene {
         stackedTokenNodes.removeAll()
 
         // Reset game state
-        gameEngine = GameEngine(playerColors: playerColors, boardSize: boardSize)
+        gameEngine = GameEngine(playerColors: playerColors, boardSize: boardSize, gameConfig: gameConfig)
         gameEngine.board.setOrigin(CGPoint(x: -boardSize/2, y: -boardSize/2))
         gameEngine.delegate = self
 

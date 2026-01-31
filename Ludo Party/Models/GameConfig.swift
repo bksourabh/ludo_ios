@@ -43,6 +43,10 @@ struct GameConfig {
     var gameMode: GameMode = .offline
     var onlinePlayerAssignments: [PlayerColor: String] = [:] // Color -> Player ID
 
+    // Feature toggles
+    /// When enabled, dice rolls favor higher numbers for all players using weighted distribution
+    var goodLuckForAll: Bool = true
+
     /// Get player type for a color
     func playerType(for color: PlayerColor) -> PlayerType {
         switch color {

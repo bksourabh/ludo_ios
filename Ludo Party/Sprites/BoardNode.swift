@@ -94,27 +94,27 @@ class BoardNode: SKNode {
     }
 
     private func drawYard(startCol: Int, startRow: Int, color: PlayerColor) {
-        let yardInset = cellSize * 0.5
-        let yardSize = cellSize * 6 - yardInset * 2
+        // Yard covers the entire 6x6 cell block
+        let yardSize = cellSize * 6
 
-        // Outer colored rectangle (inset from grid edges)
-        let x = -boardSize/2 + CGFloat(startCol) * cellSize + yardInset
-        let y = -boardSize/2 + CGFloat(startRow) * cellSize + yardInset
-        let outerRect = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 8)
+        // Outer colored rectangle (covers entire block)
+        let x = -boardSize/2 + CGFloat(startCol) * cellSize
+        let y = -boardSize/2 + CGFloat(startRow) * cellSize
+        let outerRect = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 4)
         outerRect.fillColor = color.color
         outerRect.strokeColor = lineColor
         outerRect.lineWidth = 2
         outerRect.zPosition = -5
         addChild(outerRect)
 
-        // Inner white area (with margin)
-        let margin = cellSize * 0.6
+        // Inner white area (margin determines colored border width)
+        let margin = cellSize * 0.8
         let innerRect = SKShapeNode(rect: CGRect(
             x: x + margin,
             y: y + margin,
             width: yardSize - margin * 2,
             height: yardSize - margin * 2
-        ), cornerRadius: 8)
+        ), cornerRadius: 4)
         innerRect.fillColor = .white
         innerRect.strokeColor = lineColor
         innerRect.lineWidth = 1
@@ -340,8 +340,7 @@ class BoardNode: SKNode {
     }
 
     private func drawPlayerTypeIndicator(for color: PlayerColor, isHuman: Bool) {
-        let yardInset = cellSize * 0.5
-        let yardSize = cellSize * 6 - yardInset * 2
+        let yardSize = cellSize * 6
 
         // Get yard position based on color
         let (startCol, startRow): (Int, Int)
@@ -356,12 +355,12 @@ class BoardNode: SKNode {
             startCol = 9; startRow = 0
         }
 
-        let yardX = -boardSize/2 + CGFloat(startCol) * cellSize + yardInset
-        let yardY = -boardSize/2 + CGFloat(startRow) * cellSize + yardInset
+        let yardX = -boardSize/2 + CGFloat(startCol) * cellSize
+        let yardY = -boardSize/2 + CGFloat(startRow) * cellSize
 
         // Badge size and position (top-left corner of yard)
-        let badgeSize = cellSize * 0.9
-        let badgeMargin = cellSize * 0.15
+        let badgeSize = cellSize * 0.85
+        let badgeMargin = cellSize * 0.2
         let badgeX = yardX + badgeMargin + badgeSize/2
         let badgeY = yardY + yardSize - badgeMargin - badgeSize/2
 
@@ -521,8 +520,7 @@ class BoardNode: SKNode {
         unhighlightYard()
 
         currentHighlightedColor = color
-        let yardInset = cellSize * 0.5
-        let yardSize = cellSize * 6 - yardInset * 2
+        let yardSize = cellSize * 6
 
         // Get yard position based on color
         let (startCol, startRow): (Int, Int)
@@ -537,11 +535,11 @@ class BoardNode: SKNode {
             startCol = 9; startRow = 0
         }
 
-        let x = -boardSize/2 + CGFloat(startCol) * cellSize + yardInset
-        let y = -boardSize/2 + CGFloat(startRow) * cellSize + yardInset
+        let x = -boardSize/2 + CGFloat(startCol) * cellSize
+        let y = -boardSize/2 + CGFloat(startRow) * cellSize
 
         // Create glow highlight around the yard
-        yardHighlightNode = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 8)
+        yardHighlightNode = SKShapeNode(rect: CGRect(x: x, y: y, width: yardSize, height: yardSize), cornerRadius: 4)
         yardHighlightNode?.fillColor = .clear
         yardHighlightNode?.strokeColor = color.color
         yardHighlightNode?.lineWidth = 4

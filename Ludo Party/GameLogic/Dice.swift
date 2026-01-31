@@ -12,6 +12,25 @@ class Dice {
         return value
     }
 
+    /// Roll the dice with good luck - weighted distribution favoring higher numbers
+    /// Distribution: 1: 10%, 2: 12%, 3: 15%, 4: 18%, 5: 20%, 6: 25%
+    func rollWithGoodLuck() -> Int {
+        let rand = Int.random(in: 1...100)
+        let value: Int
+
+        switch rand {
+        case 1...10:  value = 1   // 10%
+        case 11...22: value = 2   // 12%
+        case 23...37: value = 3   // 15%
+        case 38...55: value = 4   // 18%
+        case 56...75: value = 5   // 20%
+        default:      value = 6   // 25%
+        }
+
+        currentValue = value
+        return value
+    }
+
     /// Roll with weighted distribution to favor or handicap a player
     /// - Parameter favorHuman: true biases toward higher values, false biases toward lower values
     func rollBiased(favorHuman: Bool = true) -> Int {
