@@ -69,6 +69,12 @@ class OnlineGameScene: SKScene {
         setupUI()
 
         gameEngine.startGame()
+
+        // Set initial dice position without animation
+        let startingColor = gameEngine.currentPlayer.color
+        diceNode.position = dicePosition(for: startingColor)
+        diceNode.setFullPlayerColor(startingColor)
+
         updateTurnUI()
     }
 
@@ -95,6 +101,52 @@ class OnlineGameScene: SKScene {
         diceNode.position = CGPoint(x: 0, y: -size.height * 0.35)
         diceNode.zPosition = 100
         addChild(diceNode)
+    }
+
+    /// Calculate dice position based on current player's color
+    /// Positions dice above or below the player's yard
+    private func dicePosition(for color: PlayerColor) -> CGPoint {
+        let boardY = size.height * 0.05
+        let halfBoard = boardSize / 2
+        let verticalOffset = diceSize * 0.8  // Vertical offset from board edge
+
+        switch color {
+        case .red:
+            // Red is bottom-left - position dice below the yard
+            return CGPoint(
+                x: -halfBoard + boardSize * 0.2,
+                y: boardY - halfBoard - verticalOffset
+            )
+        case .green:
+            // Green is top-left - position dice above the yard
+            return CGPoint(
+                x: -halfBoard + boardSize * 0.2,
+                y: boardY + halfBoard + verticalOffset
+            )
+        case .yellow:
+            // Yellow is top-right - position dice above the yard
+            return CGPoint(
+                x: halfBoard - boardSize * 0.2,
+                y: boardY + halfBoard + verticalOffset
+            )
+        case .blue:
+            // Blue is bottom-right - position dice below the yard
+            return CGPoint(
+                x: halfBoard - boardSize * 0.2,
+                y: boardY - halfBoard - verticalOffset
+            )
+        }
+    }
+
+    /// Animate dice moving to new position
+    private func moveDice(to position: CGPoint, animated: Bool = true) {
+        if animated {
+            let moveAction = SKAction.move(to: position, duration: 0.3)
+            moveAction.timingMode = .easeInEaseOut
+            diceNode.run(moveAction)
+        } else {
+            diceNode.position = position
+        }
     }
 
     private func setupGameEngine() {
@@ -180,7 +232,12 @@ class OnlineGameScene: SKScene {
         currentPlayerLabel.text = "\(player.color.name)'s Turn"
         currentPlayerLabel.fontColor = player.color.color
 
-        diceNode.setPlayerColor(player.color)
+        // Set full dice color (fill and dots) based on player
+        diceNode.setFullPlayerColor(player.color)
+
+        // Move dice to position near the current player's yard
+        let newDicePosition = dicePosition(for: player.color)
+        moveDice(to: newDicePosition)
 
         if multiplayerController.isLocalPlayerTurn {
             hideWaitingOverlay()

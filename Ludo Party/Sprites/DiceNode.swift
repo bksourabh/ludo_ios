@@ -8,6 +8,8 @@ class DiceNode: SKNode {
     private var dotsContainer: SKNode!
     private var currentValue: Int = 1
     private var glowNode: SKShapeNode?
+    private var currentDotColor: SKColor = SKColor(white: 0.2, alpha: 1.0)
+    private var currentPlayerColor: PlayerColor?
 
     var isEnabled: Bool = true {
         didSet {
@@ -66,7 +68,7 @@ class DiceNode: SKNode {
 
         for pos in dotPositions {
             let dot = SKShapeNode(circleOfRadius: dotRadius)
-            dot.fillColor = SKColor(white: 0.2, alpha: 1.0)
+            dot.fillColor = currentDotColor
             dot.strokeColor = .clear
 
             // Convert normalized position to actual position
@@ -176,9 +178,35 @@ class DiceNode: SKNode {
         backgroundNode.lineWidth = 3
     }
 
+    /// Set full dice appearance for player's turn
+    /// Changes dice fill color to player's color and dot color based on player
+    func setFullPlayerColor(_ color: PlayerColor) {
+        currentPlayerColor = color
+
+        // Set dice fill color to player's color
+        backgroundNode.fillColor = color.color
+        backgroundNode.strokeColor = color.color.withAlphaComponent(0.8)
+        backgroundNode.lineWidth = 3
+
+        // Set dot color: white for red, green, blue; black for yellow
+        switch color {
+        case .yellow:
+            currentDotColor = .black
+        case .red, .green, .blue:
+            currentDotColor = .white
+        }
+
+        // Update dots with new color
+        updateDots()
+    }
+
     /// Reset to default appearance
     func resetAppearance() {
+        backgroundNode.fillColor = .white
         backgroundNode.strokeColor = SKColor(white: 0.3, alpha: 1.0)
         backgroundNode.lineWidth = 2
+        currentDotColor = SKColor(white: 0.2, alpha: 1.0)
+        currentPlayerColor = nil
+        updateDots()
     }
 }
