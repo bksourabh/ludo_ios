@@ -605,9 +605,15 @@ class GameScene: SKScene {
 
             // Check if current player is AI
             if isAIPlayer(gameEngine.currentPlayer) {
+                // Capture current player to verify in callback
+                let currentColor = gameEngine.currentPlayer.color
                 // AI selects best move
                 DispatchQueue.main.asyncAfter(deadline: .now() + aiMoveDelay) { [weak self] in
-                    self?.performAIMove()
+                    guard let self = self else { return }
+                    // Ensure it's still the same player's turn
+                    guard self.gameEngine.currentPlayer.color == currentColor else { return }
+                    guard self.gameEngine.phase == .selectingToken else { return }
+                    self.performAIMove()
                 }
             } else {
                 // Human player
@@ -666,6 +672,9 @@ class GameScene: SKScene {
 
         isAITurnInProgress = true
 
+        // Capture the current player to verify in the callback
+        let initiatingPlayer = gameEngine.currentPlayer.color
+
         // Disable dice during AI turn - not clickable by human
         diceNode.isEnabled = false
 
@@ -675,6 +684,11 @@ class GameScene: SKScene {
         DispatchQueue.main.asyncAfter(deadline: .now() + aiGlowDelay) { [weak self] in
             guard let self = self else { return }
             guard self.gameEngine.phase == .rolling else {
+                self.isAITurnInProgress = false
+                return
+            }
+            // Ensure it's still the same player's turn (prevents stale callbacks)
+            guard self.gameEngine.currentPlayer.color == initiatingPlayer else {
                 self.isAITurnInProgress = false
                 return
             }
@@ -748,12 +762,10 @@ class GameScene: SKScene {
                     diceNode.isEnabled = true
                     diceNode.showGlow(color: gameEngine.currentPlayer.color)
                 }
-            } else {
-                // Turn changed to different player, reset flag
-                isAITurnInProgress = false
             }
             // If token.color != currentPlayer.color, the turn already changed
-            // and turnDidChange already triggered the new player's turn
+            // and turnDidChange already triggered the new player's turn.
+            // Do NOT reset isAITurnInProgress here - the new player's turn may have already set it.
         } else if gameEngine.phase == .gameOver {
             isAITurnInProgress = false
             showGameOver()
