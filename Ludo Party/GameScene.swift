@@ -44,6 +44,9 @@ class GameScene: SKScene {
     private var noValidMovesOccurred: Bool = false
     private var pendingTurnPlayer: Player?
 
+    // AI turn tracking to prevent overlapping turns
+    private var isAITurnInProgress: Bool = false
+
     // MARK: - Scene Lifecycle
 
     override func didMove(to view: SKView) {
@@ -585,6 +588,7 @@ class GameScene: SKScene {
         if let pendingPlayer = pendingTurnPlayer {
             pendingTurnPlayer = nil
             noValidMovesOccurred = false
+            isAITurnInProgress = false  // Reset AI turn flag
             currentPlayerLabel.text = "No possible move"
 
             // Keep dice disabled during the wait
@@ -629,7 +633,11 @@ class GameScene: SKScene {
     }
 
     private func performAIMove() {
-        guard let bestToken = gameEngine.suggestBestMove() else { return }
+        guard let bestToken = gameEngine.suggestBestMove() else {
+            // No valid move found (shouldn't happen), reset flag
+            isAITurnInProgress = false
+            return
+        }
         moveToken(bestToken)
     }
 
@@ -637,6 +645,9 @@ class GameScene: SKScene {
         updateCurrentPlayerDisplay()
         updateTurnHighlights()
         updateStackedTokenGlows()
+
+        // Reset AI turn flag when changing turns
+        isAITurnInProgress = false
 
         if isAIPlayer(player) {
             showMessage("\(player.color.name) is thinking...")
@@ -651,6 +662,9 @@ class GameScene: SKScene {
     private func checkAndPerformAITurn() {
         guard gameEngine.phase == .rolling else { return }
         guard isAIPlayer(gameEngine.currentPlayer) else { return }
+        guard !isAITurnInProgress else { return }  // Prevent overlapping AI turns
+
+        isAITurnInProgress = true
 
         // Disable dice during AI turn - not clickable by human
         diceNode.isEnabled = false
@@ -660,8 +674,14 @@ class GameScene: SKScene {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + aiGlowDelay) { [weak self] in
             guard let self = self else { return }
-            guard self.gameEngine.phase == .rolling else { return }
-            guard self.isAIPlayer(self.gameEngine.currentPlayer) else { return }
+            guard self.gameEngine.phase == .rolling else {
+                self.isAITurnInProgress = false
+                return
+            }
+            guard self.isAIPlayer(self.gameEngine.currentPlayer) else {
+                self.isAITurnInProgress = false
+                return
+            }
 
             self.rollDice()
         }
@@ -719,16 +739,23 @@ class GameScene: SKScene {
             // Only trigger next roll if this is a bonus roll for the SAME player
             // Turn changes to a different player are handled by turnDidChange delegate
             if token.color == gameEngine.currentPlayer.color {
+                // Reset AI turn flag before starting new roll cycle
+                isAITurnInProgress = false
+
                 if isAIPlayer(gameEngine.currentPlayer) {
                     checkAndPerformAITurn()
                 } else {
                     diceNode.isEnabled = true
                     diceNode.showGlow(color: gameEngine.currentPlayer.color)
                 }
+            } else {
+                // Turn changed to different player, reset flag
+                isAITurnInProgress = false
             }
             // If token.color != currentPlayer.color, the turn already changed
             // and turnDidChange already triggered the new player's turn
         } else if gameEngine.phase == .gameOver {
+            isAITurnInProgress = false
             showGameOver()
         }
     }
