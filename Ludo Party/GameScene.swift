@@ -610,13 +610,19 @@ class GameScene: SKScene {
                 // AI selects best move
                 DispatchQueue.main.asyncAfter(deadline: .now() + aiMoveDelay) { [weak self] in
                     guard let self = self else { return }
-                    // Ensure it's still the same player's turn
-                    guard self.gameEngine.currentPlayer.color == currentColor else { return }
-                    guard self.gameEngine.phase == .selectingToken else { return }
+                    // Ensure it's still the same player's turn and phase is correct
+                    guard self.gameEngine.currentPlayer.color == currentColor,
+                          self.gameEngine.phase == .selectingToken else {
+                        // State changed, reset flag so new turns can proceed
+                        self.isAITurnInProgress = false
+                        return
+                    }
                     self.performAIMove()
                 }
             } else {
-                // Human player
+                // Human player - reset AI flag since it's not AI's turn
+                isAITurnInProgress = false
+
                 // Auto-play when all movable tokens are in the same state
                 // (e.g. all in yard, or all at the same track position)
                 let allSameState = movable.allSatisfy { $0.state == movable[0].state }
@@ -631,6 +637,9 @@ class GameScene: SKScene {
                     showMessage("Select a token to move")
                 }
             }
+        } else {
+            // Phase is not selectingToken - reset AI flag
+            isAITurnInProgress = false
         }
     }
 
@@ -639,8 +648,16 @@ class GameScene: SKScene {
     }
 
     private func performAIMove() {
+        // Verify we're still in the correct state
+        guard gameEngine.phase == .selectingToken,
+              isAIPlayer(gameEngine.currentPlayer) else {
+            isAITurnInProgress = false
+            return
+        }
+
         guard let bestToken = gameEngine.suggestBestMove() else {
-            // No valid move found (shouldn't happen), reset flag
+            // No valid move found (shouldn't happen if phase is selectingToken)
+            // This is a safety fallback
             isAITurnInProgress = false
             return
         }
@@ -666,9 +683,20 @@ class GameScene: SKScene {
     }
 
     private func checkAndPerformAITurn() {
-        guard gameEngine.phase == .rolling else { return }
-        guard isAIPlayer(gameEngine.currentPlayer) else { return }
-        guard !isAITurnInProgress else { return }  // Prevent overlapping AI turns
+        // Verify we're in the correct state for an AI turn
+        guard gameEngine.phase == .rolling else {
+            isAITurnInProgress = false
+            return
+        }
+        guard isAIPlayer(gameEngine.currentPlayer) else {
+            isAITurnInProgress = false
+            return
+        }
+
+        // Prevent overlapping AI turn attempts
+        if isAITurnInProgress {
+            return
+        }
 
         isAITurnInProgress = true
 
@@ -683,20 +711,17 @@ class GameScene: SKScene {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + aiGlowDelay) { [weak self] in
             guard let self = self else { return }
-            guard self.gameEngine.phase == .rolling else {
-                self.isAITurnInProgress = false
-                return
-            }
-            // Ensure it's still the same player's turn (prevents stale callbacks)
-            guard self.gameEngine.currentPlayer.color == initiatingPlayer else {
-                self.isAITurnInProgress = false
-                return
-            }
-            guard self.isAIPlayer(self.gameEngine.currentPlayer) else {
+
+            // Verify state hasn't changed during the delay
+            guard self.gameEngine.phase == .rolling,
+                  self.gameEngine.currentPlayer.color == initiatingPlayer,
+                  self.isAIPlayer(self.gameEngine.currentPlayer) else {
+                // State changed - reset flag and let the current state handler take over
                 self.isAITurnInProgress = false
                 return
             }
 
+            // Proceed with the roll
             self.rollDice()
         }
     }
@@ -729,7 +754,13 @@ class GameScene: SKScene {
             // Play in_home sound when token reaches home
             MusicManager.shared.playInHomeSound()
         case .capturedOpponent(let captured):
-            animateCapturedToken(captured)
+            // Get the capture position from the moving token's current state
+            if case .onTrack(let capturePosition) = token.state {
+                animateCapturedToken(captured, fromPosition: capturePosition)
+            } else {
+                // Fallback: use start position if we can't determine capture position
+                animateCapturedToken(captured, fromPosition: captured.color.startPosition)
+            }
         case .success:
             // Check if token landed on a safe spot
             // Don't play safe sound if token just came out of yard onto its start position
@@ -772,17 +803,41 @@ class GameScene: SKScene {
         }
     }
 
-    private func animateCapturedToken(_ token: Token) {
+    private func animateCapturedToken(_ token: Token, fromPosition capturePosition: Int) {
         guard let tokenNode = tokenNodes[token.identifier] else { return }
 
         let yardPositions = gameEngine.board.yardPositions(for: token.color)
         let yardPosition = yardPositions[token.index]
-        let adjustedPosition = CGPoint(
+        let adjustedYardPosition = CGPoint(
             x: yardPosition.x,
             y: yardPosition.y + size.height * 0.05
         )
 
-        tokenNode.animateCapture(to: adjustedPosition)
+        // Calculate the path backwards from capture position to start position
+        let startPosition = token.color.startPosition
+        var pathPositions: [CGPoint] = []
+
+        // Trace backwards from capture position to start position
+        var currentPos = capturePosition
+        while currentPos != startPosition {
+            // Move backwards on the track (wrap around at 0)
+            currentPos = (currentPos - 1 + 52) % 52
+
+            let screenPos = gameEngine.board.screenPosition(forTrackPosition: currentPos)
+            let adjustedPos = CGPoint(
+                x: screenPos.x,
+                y: screenPos.y + size.height * 0.05
+            )
+            pathPositions.append(adjustedPos)
+
+            // Safety check to avoid infinite loop
+            if pathPositions.count > 52 {
+                break
+            }
+        }
+
+        // Animate along the path back to yard
+        tokenNode.animateCaptureAlongPath(pathPositions: pathPositions, yardPosition: adjustedYardPosition)
     }
 
     private func showGameOver() {
@@ -906,7 +961,7 @@ extension GameScene: GameEngineDelegate {
         // Animation handled separately
     }
 
-    func tokenDidGetCaptured(token: Token, by: Token) {
+    func tokenDidGetCaptured(token: Token, by: Token, atPosition: Int) {
         showMessage("\(by.color.name) captured \(token.color.name)!", duration: 2)
         MusicManager.shared.playEatSound()
     }

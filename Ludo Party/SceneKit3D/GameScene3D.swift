@@ -559,7 +559,12 @@ class GameScene3D: SCNScene {
         case .reachedHome:
             token3DNodes[token.identifier]?.animateReachHome()
         case .capturedOpponent(let captured):
-            animateCapturedToken(captured)
+            // Get the capture position from the moving token's current state
+            if case .onTrack(let capturePosition) = token.state {
+                animateCapturedToken(captured, fromPosition: capturePosition)
+            } else {
+                animateCapturedToken(captured, fromPosition: captured.color.startPosition)
+            }
         default:
             break
         }
@@ -575,9 +580,10 @@ class GameScene3D: SCNScene {
         }
     }
 
-    private func animateCapturedToken(_ token: Token) {
+    private func animateCapturedToken(_ token: Token, fromPosition: Int) {
         guard let token3D = token3DNodes[token.identifier] else { return }
 
+        // For 3D scene, use simple animation to yard (path tracing would require 3D path calculation)
         let yardPosition = board3D.yardPosition(for: token.color, index: token.index)
         token3D.animateCaptured(yardPosition: yardPosition)
     }
@@ -684,7 +690,7 @@ extension GameScene3D: GameEngineDelegate {
         // Animation handled separately
     }
 
-    func tokenDidGetCaptured(token: Token, by: Token) {
+    func tokenDidGetCaptured(token: Token, by: Token, atPosition: Int) {
         showMessage("\(by.color.name) captured \(token.color.name)!", duration: 2)
     }
 

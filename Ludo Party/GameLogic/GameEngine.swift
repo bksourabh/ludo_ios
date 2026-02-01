@@ -6,7 +6,7 @@ protocol GameEngineDelegate: AnyObject {
     func turnDidChange(to player: Player)
     func diceDidRoll(value: Int)
     func tokenDidMove(token: Token, from: TokenState, to: TokenState)
-    func tokenDidGetCaptured(token: Token, by: Token)
+    func tokenDidGetCaptured(token: Token, by: Token, atPosition: Int)
     func playerDidGetBonusRoll(player: Player, reason: BonusRollReason)
     func playerDidFinish(player: Player, place: Int)
     func gameDidEnd(winner: Player)
@@ -61,10 +61,13 @@ class GameEngine {
     }
 
     /// Roll the dice for the current player
+    /// Note: The same dice roll logic is used for ALL players (human and AI)
+    /// When goodLuckForAll is enabled, all players get the same weighted distribution
     func rollDice() -> Int {
         guard gameState.phase == .rolling else { return 0 }
 
         // Use weighted distribution if goodLuckForAll is enabled
+        // This is the SAME for all players - no bias between human and AI
         let value = gameConfig.goodLuckForAll ? dice.rollWithGoodLuck() : dice.roll()
         gameState.currentDiceValue = value
         gameState.addEvent(.diceRolled(player: currentPlayer.color, value: value))
@@ -213,7 +216,7 @@ class GameEngine {
                     captured: targetToken.color,
                     position: position
                 ))
-                delegate?.tokenDidGetCaptured(token: targetToken, by: attackingToken)
+                delegate?.tokenDidGetCaptured(token: targetToken, by: attackingToken, atPosition: position)
                 return targetToken
             }
         }

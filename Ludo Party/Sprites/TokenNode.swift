@@ -123,7 +123,62 @@ class TokenNode: SKNode {
         }
     }
 
-    /// Animate capture (visible movement back to yard)
+    /// Animate capture by tracing back along the board path to the yard
+    /// - Parameters:
+    ///   - pathPositions: Array of screen positions to trace back through (from current to start)
+    ///   - yardPosition: Final yard position to end at
+    ///   - completion: Called when animation completes
+    func animateCaptureAlongPath(pathPositions: [CGPoint], yardPosition: CGPoint, completion: (() -> Void)? = nil) {
+        // Flash red to indicate capture
+        let flashRed = SKAction.colorize(with: .red, colorBlendFactor: 0.8, duration: 0.1)
+        let flashBack = SKAction.colorize(withColorBlendFactor: 0, duration: 0.1)
+        let flash = SKAction.sequence([flashRed, flashBack])
+
+        // Shrink slightly while moving
+        let shrinkDown = SKAction.scale(to: 0.7, duration: 0.1)
+        let startEffects = SKAction.group([flash, shrinkDown])
+
+        // Build path movement actions - move through each position quickly
+        var pathMoves: [SKAction] = []
+        let stepDuration: TimeInterval = 0.05  // Fast movement per step
+
+        for position in pathPositions {
+            let move = SKAction.move(to: position, duration: stepDuration)
+            move.timingMode = .linear
+            pathMoves.append(move)
+        }
+
+        // Final move to yard with a slight arc
+        let lastPathPos = pathPositions.last ?? self.position
+        let arcMidPoint = CGPoint(
+            x: (lastPathPos.x + yardPosition.x) / 2,
+            y: max(lastPathPos.y, yardPosition.y) + 40
+        )
+        let moveToArc = SKAction.move(to: arcMidPoint, duration: 0.15)
+        moveToArc.timingMode = .easeOut
+        let moveToYard = SKAction.move(to: yardPosition, duration: 0.15)
+        moveToYard.timingMode = .easeIn
+        pathMoves.append(moveToArc)
+        pathMoves.append(moveToYard)
+
+        let pathSequence = SKAction.sequence(pathMoves)
+
+        // Grow back to normal size at the end
+        let growBack = SKAction.scale(to: 1.0, duration: 0.15)
+
+        // Bounce effect when landing
+        let bounceUp = SKAction.scale(to: 1.1, duration: 0.08)
+        let bounceDown = SKAction.scale(to: 1.0, duration: 0.08)
+        let bounce = SKAction.sequence([bounceUp, bounceDown])
+        let endEffects = SKAction.sequence([growBack, bounce])
+
+        let fullSequence = SKAction.sequence([startEffects, pathSequence, endEffects])
+        run(fullSequence) {
+            completion?()
+        }
+    }
+
+    /// Animate capture with simple arc (fallback when path not available)
     func animateCapture(to yardPosition: CGPoint, completion: (() -> Void)? = nil) {
         // Flash red to indicate capture
         let flashRed = SKAction.colorize(with: .red, colorBlendFactor: 0.8, duration: 0.1)

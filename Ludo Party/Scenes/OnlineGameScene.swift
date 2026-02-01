@@ -609,7 +609,12 @@ class OnlineGameScene: SKScene {
             // Play in_home sound when token reaches home
             MusicManager.shared.playInHomeSound()
         case .capturedOpponent(let captured):
-            animateCapturedToken(captured)
+            // Get the capture position from the moving token's current state
+            if case .onTrack(let capturePosition) = token.state {
+                animateCapturedToken(captured, fromPosition: capturePosition)
+            } else {
+                animateCapturedToken(captured, fromPosition: captured.color.startPosition)
+            }
         case .success:
             // Check if token landed on a safe spot
             // Don't play safe sound if token just came out of yard onto its start position
@@ -642,17 +647,38 @@ class OnlineGameScene: SKScene {
         }
     }
 
-    private func animateCapturedToken(_ token: Token) {
+    private func animateCapturedToken(_ token: Token, fromPosition capturePosition: Int) {
         guard let tokenNode = tokenNodes[token.identifier] else { return }
 
         let yardPositions = gameEngine.board.yardPositions(for: token.color)
         let yardPosition = yardPositions[token.index]
-        let adjustedPosition = CGPoint(
+        let adjustedYardPosition = CGPoint(
             x: yardPosition.x,
             y: yardPosition.y + size.height * 0.05
         )
 
-        tokenNode.animateCapture(to: adjustedPosition)
+        // Calculate the path backwards from capture position to start position
+        let startPosition = token.color.startPosition
+        var pathPositions: [CGPoint] = []
+
+        // Trace backwards from capture position to start position
+        var currentPos = capturePosition
+        while currentPos != startPosition {
+            currentPos = (currentPos - 1 + 52) % 52
+
+            let screenPos = gameEngine.board.screenPosition(forTrackPosition: currentPos)
+            let adjustedPos = CGPoint(
+                x: screenPos.x,
+                y: screenPos.y + size.height * 0.05
+            )
+            pathPositions.append(adjustedPos)
+
+            if pathPositions.count > 52 {
+                break
+            }
+        }
+
+        tokenNode.animateCaptureAlongPath(pathPositions: pathPositions, yardPosition: adjustedYardPosition)
     }
 
     // MARK: - AI Turn
@@ -885,7 +911,7 @@ extension OnlineGameScene: GameEngineDelegate {
         // Animation handled separately
     }
 
-    func tokenDidGetCaptured(token: Token, by: Token) {
+    func tokenDidGetCaptured(token: Token, by: Token, atPosition: Int) {
         showMessage("\(by.color.name) captured \(token.color.name)!", duration: 2)
         MusicManager.shared.playEatSound()
     }
@@ -964,7 +990,12 @@ extension OnlineGameScene: MultiplayerGameControllerDelegate {
                     // Play in_home sound when token reaches home
                     MusicManager.shared.playInHomeSound()
                 case .capturedOpponent(let captured):
-                    self.animateCapturedToken(captured)
+                    // Get the capture position from the moving token's destination state
+                    if case .onTrack(let capturePosition) = to {
+                        self.animateCapturedToken(captured, fromPosition: capturePosition)
+                    } else {
+                        self.animateCapturedToken(captured, fromPosition: captured.color.startPosition)
+                    }
                     MusicManager.shared.playEatSound()
                 case .success:
                     // Check if token landed on a safe spot
