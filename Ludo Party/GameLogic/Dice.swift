@@ -67,12 +67,12 @@ class Dice {
 
     /// Roll the dice with animation callback support
     /// The callback receives intermediate values during animation and final value at the end
-    func rollWithAnimation(duration: Double = 0.8, onValue: @escaping (Int, Bool) -> Void) {
+    func rollWithAnimation(duration: Double = 0.5, onValue: @escaping (Int, Bool) -> Void) {
         guard !isRolling else { return }
 
         isRolling = true
         let finalValue = Int.random(in: 1...6)
-        let numberOfRolls = 10
+        let numberOfRolls = 6
         let interval = duration / Double(numberOfRolls)
 
         for i in 0..<numberOfRolls {

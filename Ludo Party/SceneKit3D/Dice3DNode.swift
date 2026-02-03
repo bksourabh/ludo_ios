@@ -165,17 +165,17 @@ class Dice3DNode: SCNNode {
     // MARK: - Dice Rolling
 
     /// Roll the dice with 3D animation
-    func roll(finalValue: Int, duration: TimeInterval = 1.2, completion: (() -> Void)? = nil) {
+    func roll(finalValue: Int, duration: TimeInterval = 0.5, completion: (() -> Void)? = nil) {
         guard !isRolling else { return }
         isRolling = true
         isEnabled = false
 
         // Phase 1: Jump up
-        let jumpHeight: Float = 0.8
+        let jumpHeight: Float = 0.5
         let startPosition = position
 
         // Create physics-like rolling animation
-        let totalSpins = Int.random(in: 3...5)
+        let totalSpins = Int.random(in: 2...3)
         let randomAxis = SCNVector3(
             Float.random(in: 0.5...1.0),
             Float.random(in: 0.5...1.0),
