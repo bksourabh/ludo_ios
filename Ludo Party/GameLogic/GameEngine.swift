@@ -51,6 +51,14 @@ class GameEngine {
         self.gameConfig = gameConfig
     }
 
+    /// Initialize with a pre-existing game state (for loading saved games)
+    init(savedGameState: GameState, boardSize: CGFloat, gameConfig: GameConfig) {
+        self.gameState = savedGameState
+        self.board = LudoBoard(boardSize: boardSize)
+        self.dice = Dice()
+        self.gameConfig = gameConfig
+    }
+
     // MARK: - Game Flow
 
     /// Start the game

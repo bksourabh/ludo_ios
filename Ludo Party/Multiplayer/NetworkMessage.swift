@@ -224,10 +224,10 @@ enum NetworkMessageError: Error {
     case decodingFailed
 }
 
-// MARK: - GamePhase Extension for Encoding
+// MARK: - GamePhase Extension for Network Encoding
 
 extension GamePhase {
-    var rawValue: Int {
+    var intValue: Int {
         switch self {
         case .waitingToStart: return 0
         case .rolling: return 1
@@ -237,8 +237,8 @@ extension GamePhase {
         }
     }
 
-    init?(rawValue: Int) {
-        switch rawValue {
+    init?(intValue: Int) {
+        switch intValue {
         case 0: self = .waitingToStart
         case 1: self = .rolling
         case 2: self = .selectingToken

@@ -193,7 +193,7 @@ class MultiplayerGameController: MatchManagerDelegate {
         return FullStateSyncPayload(
             players: encodedPlayers,
             currentPlayerColor: gameEngine.currentPlayer.color.rawValue,
-            phase: gameEngine.phase.rawValue,
+            phase: gameEngine.phase.intValue,
             currentDiceValue: gameEngine.currentDiceValue,
             consecutiveSixes: gameEngine.gameState.consecutiveSixes,
             finishOrder: gameEngine.gameState.finishOrder.map { $0.rawValue },
@@ -402,7 +402,7 @@ class MultiplayerGameController: MatchManagerDelegate {
         gameEngine.gameState.currentDiceValue = payload.currentDiceValue
         gameEngine.gameState.consecutiveSixes = payload.consecutiveSixes
 
-        if let phase = GamePhase(rawValue: payload.phase) {
+        if let phase = GamePhase(intValue: payload.phase) {
             gameEngine.gameState.phase = phase
         }
 

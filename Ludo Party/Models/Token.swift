@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents the state of a token on the board
-enum TokenState: Equatable {
+enum TokenState: Equatable, Codable {
     case inYard                    // Token is in the starting yard
     case onTrack(position: Int)    // Token is on the main track (0-51)
     case onHomePath(position: Int) // Token is on the home path (0-5, where 5 is home)
@@ -18,6 +18,50 @@ enum TokenState: Equatable {
 
     var isFinished: Bool {
         return self == .home
+    }
+
+    // Custom Codable implementation for enum with associated values
+    private enum CodingKeys: String, CodingKey {
+        case type, position
+    }
+
+    private enum StateType: String, Codable {
+        case inYard, onTrack, onHomePath, home
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let type = try container.decode(StateType.self, forKey: .type)
+
+        switch type {
+        case .inYard:
+            self = .inYard
+        case .onTrack:
+            let position = try container.decode(Int.self, forKey: .position)
+            self = .onTrack(position: position)
+        case .onHomePath:
+            let position = try container.decode(Int.self, forKey: .position)
+            self = .onHomePath(position: position)
+        case .home:
+            self = .home
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        switch self {
+        case .inYard:
+            try container.encode(StateType.inYard, forKey: .type)
+        case .onTrack(let position):
+            try container.encode(StateType.onTrack, forKey: .type)
+            try container.encode(position, forKey: .position)
+        case .onHomePath(let position):
+            try container.encode(StateType.onHomePath, forKey: .type)
+            try container.encode(position, forKey: .position)
+        case .home:
+            try container.encode(StateType.home, forKey: .type)
+        }
     }
 }
 

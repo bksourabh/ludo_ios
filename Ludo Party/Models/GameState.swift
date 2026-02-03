@@ -1,7 +1,7 @@
 import Foundation
 
 /// Represents the overall state of the game
-enum GamePhase {
+enum GamePhase: String, Codable {
     case waitingToStart
     case rolling              // Waiting for dice roll
     case selectingToken       // Player needs to select which token to move

@@ -5,6 +5,7 @@ import GameKit
 /// Protocol for menu scene delegate
 protocol MenuSceneDelegate: AnyObject {
     func menuSceneDidStartGame(with config: GameConfig)
+    func menuSceneDidRequestContinueGame()
     func menuSceneRequestsAppleSignIn()
     func menuSceneRequestsGameCenterAuth()
     func menuSceneRequestsGuestLogin()
@@ -43,6 +44,7 @@ class MenuScene: SKScene {
     private var guestLabel: SKLabelNode!
 
     // Mode Selection UI Elements
+    private var continueGameButton: SKShapeNode?
     private var playOfflineButton: SKShapeNode!
     private var createOnlineButton: SKShapeNode!
     private var joinOnlineButton: SKShapeNode!
@@ -189,12 +191,28 @@ class MenuScene: SKScene {
         modeTitle.position = CGPoint(x: 0, y: size.height * 0.14)
         modeSelectionContainer.addChild(modeTitle)
 
+        // Calculate button positions based on whether there's a saved game
+        let hasSavedGame = GameSaveManager.shared.hasSavedGame
+        let buttonOffset: CGFloat = hasSavedGame ? -size.height * 0.10 : 0
+
+        // Continue Game button (only shown if there's a saved game)
+        if hasSavedGame {
+            continueGameButton = createModeButton(
+                text: "Continue Game",
+                subtitle: "Resume your saved game",
+                color: SKColor(red: 0.9, green: 0.6, blue: 0.1, alpha: 1.0),
+                yPos: size.height * 0.02
+            )
+            continueGameButton?.name = "continueGameButton"
+            modeSelectionContainer.addChild(continueGameButton!)
+        }
+
         // Play Offline button
         playOfflineButton = createModeButton(
-            text: "Play Offline",
+            text: "New Offline Game",
             subtitle: "vs Computer or Local Players",
             color: SKColor(red: 0.2, green: 0.7, blue: 0.3, alpha: 1.0),
-            yPos: size.height * 0.02
+            yPos: size.height * 0.02 + buttonOffset
         )
         playOfflineButton.name = "playOfflineButton"
         modeSelectionContainer.addChild(playOfflineButton)
@@ -204,7 +222,7 @@ class MenuScene: SKScene {
             text: "Create Online Game",
             subtitle: "Host a multiplayer match",
             color: SKColor(red: 0.2, green: 0.5, blue: 0.8, alpha: 1.0),
-            yPos: -size.height * 0.10
+            yPos: -size.height * 0.10 + buttonOffset
         )
         createOnlineButton.name = "createOnlineButton"
         modeSelectionContainer.addChild(createOnlineButton)
@@ -214,7 +232,7 @@ class MenuScene: SKScene {
             text: "Join Online Game",
             subtitle: "Find a multiplayer match",
             color: SKColor(red: 0.6, green: 0.3, blue: 0.7, alpha: 1.0),
-            yPos: -size.height * 0.22
+            yPos: -size.height * 0.22 + buttonOffset
         )
         joinOnlineButton.name = "joinOnlineButton"
         modeSelectionContainer.addChild(joinOnlineButton)
@@ -516,9 +534,19 @@ class MenuScene: SKScene {
     }
 
     private func handleModeSelectionTouch(at location: CGPoint) {
+        // Continue Game button (if present)
+        if let continueButton = continueGameButton, continueButton.contains(location) {
+            animateButtonPress(continueButton) { [weak self] in
+                self?.menuDelegate?.menuSceneDidRequestContinueGame()
+            }
+            return
+        }
+
         // Play Offline button
         if playOfflineButton.contains(location) {
             animateButtonPress(playOfflineButton) { [weak self] in
+                // Delete any saved game when starting a new game
+                GameSaveManager.shared.deleteSavedGame()
                 self?.showOfflineSetup()
             }
             return

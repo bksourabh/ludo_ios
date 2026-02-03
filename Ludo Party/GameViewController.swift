@@ -51,13 +51,14 @@ class GameViewController: UIViewController {
         skView.presentScene(menuScene, transition: SKTransition.fade(withDuration: 0.5))
     }
 
-    private func showGameScene(with config: GameConfig) {
+    private func showGameScene(with config: GameConfig, savedGameState: GameState? = nil) {
         currentGameConfig = config
 
         let gameScene = GameScene(size: skView.bounds.size)
         gameScene.scaleMode = .aspectFill
         gameScene.anchorPoint = CGPoint(x: 0.5, y: 0.5)
         gameScene.gameConfig = config
+        gameScene.savedGameState = savedGameState
         gameScene.gameSceneDelegate = self
 
         skView.presentScene(gameScene, transition: SKTransition.fade(withDuration: 0.5))
@@ -153,6 +154,15 @@ class GameViewController: UIViewController {
 extension GameViewController: MenuSceneDelegate {
     func menuSceneDidStartGame(with config: GameConfig) {
         showGameScene(with: config)
+    }
+
+    func menuSceneDidRequestContinueGame() {
+        guard let savedData = GameSaveManager.shared.loadGame() else {
+            // No saved game found, show menu
+            showMenuScene()
+            return
+        }
+        showGameScene(with: savedData.gameConfig, savedGameState: savedData.gameState)
     }
 
     func menuSceneRequestsAppleSignIn() {

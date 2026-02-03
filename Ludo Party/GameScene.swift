@@ -27,6 +27,7 @@ class GameScene: SKScene {
 
     // Game configuration
     var gameConfig: GameConfig = GameConfig()
+    var savedGameState: GameState?  // For loading saved games
     weak var gameSceneDelegate: GameSceneDelegate?
     private let playerColors: [PlayerColor] = [.red, .green, .yellow, .blue]
 
@@ -146,9 +147,8 @@ class GameScene: SKScene {
             for token in player.tokens {
                 let tokenNode = TokenNode(token: token, size: tokenSize)
 
-                // Position in yard
-                let yardPositions = boardNode.getBoard().yardPositions(for: token.color)
-                let position = yardPositions[token.index]
+                // Position based on token's current state (supports saved games)
+                let position = gameEngine.screenPosition(for: token)
 
                 // Adjust position relative to board node
                 tokenNode.position = CGPoint(
@@ -160,6 +160,11 @@ class GameScene: SKScene {
                 tokenNodes[token.identifier] = tokenNode
                 addChild(tokenNode)
             }
+        }
+
+        // Update token stacking for any tokens that are on the same position (from saved game)
+        if savedGameState != nil {
+            updateTokenStacking()
         }
     }
 
@@ -208,7 +213,13 @@ class GameScene: SKScene {
     }
 
     private func setupGameEngine() {
-        gameEngine = GameEngine(playerColors: playerColors, boardSize: boardSize, gameConfig: gameConfig)
+        if let savedState = savedGameState {
+            // Use saved game state
+            gameEngine = GameEngine(savedGameState: savedState, boardSize: boardSize, gameConfig: gameConfig)
+        } else {
+            // Create new game
+            gameEngine = GameEngine(playerColors: playerColors, boardSize: boardSize, gameConfig: gameConfig)
+        }
         gameEngine.board.setOrigin(CGPoint(x: -boardSize/2, y: -boardSize/2))
         gameEngine.delegate = self
     }
@@ -943,6 +954,11 @@ extension GameScene: GameEngineDelegate {
     }
 
     func turnDidChange(to player: Player) {
+        // Save game state after each turn change (for offline play only)
+        if gameConfig.gameMode == .offline {
+            GameSaveManager.shared.saveGame(gameState: gameEngine.gameState, gameConfig: gameConfig)
+        }
+
         // If no valid moves occurred, defer the turn change until after the dice
         // animation finishes and the result is held on screen
         if noValidMovesOccurred {
@@ -995,6 +1011,10 @@ extension GameScene: GameEngineDelegate {
         clearTurnHighlights()
         // Play in_home sound first, then applause
         MusicManager.shared.playGameFinishSounds()
+        // Delete saved game when game is complete
+        if gameConfig.gameMode == .offline {
+            GameSaveManager.shared.deleteSavedGame()
+        }
         // Game over UI handled in afterTokenMove
     }
 

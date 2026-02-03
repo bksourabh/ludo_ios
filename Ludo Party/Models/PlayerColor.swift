@@ -2,7 +2,7 @@ import Foundation
 import SpriteKit
 
 /// Represents the four player colors in Ludo
-enum PlayerColor: Int, CaseIterable {
+enum PlayerColor: Int, CaseIterable, Codable {
     case red = 0
     case green = 1
     case yellow = 2
