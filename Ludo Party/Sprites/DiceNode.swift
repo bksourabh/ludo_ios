@@ -81,6 +81,8 @@ class DiceNode: SKNode {
     }
 
     /// Animate rolling the dice
+    /// - Note: Does NOT re-enable the dice after animation. Caller is responsible for
+    ///   setting isEnabled = true when appropriate (e.g., for human player turns only).
     func animateRoll(finalValue: Int, duration: TimeInterval = 0.5, completion: (() -> Void)? = nil) {
         isEnabled = false
 
@@ -122,8 +124,8 @@ class DiceNode: SKNode {
 
         let sequence = SKAction.sequence(actions)
 
-        run(sequence) { [weak self] in
-            self?.isEnabled = true
+        // Caller controls isEnabled — we do NOT re-enable here
+        run(sequence) {
             completion?()
         }
     }

@@ -7,8 +7,8 @@ class BoardNode: SKNode {
     let cellSize: CGFloat
     var gameConfig: GameConfig?
 
-    private let backgroundColor = SKColor(white: 0.95, alpha: 1.0)
-    private let lineColor = SKColor(white: 0.3, alpha: 1.0)
+    private let backgroundColor = SKColor(white: 0.97, alpha: 1.0)
+    private let lineColor = SKColor(white: 0.22, alpha: 1.0)
 
     private var yardHighlightNode: SKShapeNode?
     private var currentHighlightedColor: PlayerColor?
