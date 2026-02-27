@@ -320,9 +320,26 @@ class GameEngine {
         case .inYard:
             return diceValue == 6 ? token.color.startPosition : nil
         case .onTrack(let position):
-            return (position + diceValue) % 52
+            // Must respect home path entry — token can't wrap around past its home entry
+            let stepsToHomeEntry = distanceToHomeEntry(from: position, color: token.color)
+            if diceValue <= stepsToHomeEntry {
+                return (position + diceValue) % 52
+            } else {
+                // Token enters home path — no capture possible on home path
+                return nil
+            }
         default:
             return nil
+        }
+    }
+
+    /// Mirror of Token's distanceToHomeEntry for AI simulation
+    private func distanceToHomeEntry(from position: Int, color: PlayerColor) -> Int {
+        let homeEntry = color.homeEntryPosition
+        if position <= homeEntry {
+            return homeEntry - position
+        } else {
+            return (52 - position) + homeEntry
         }
     }
 

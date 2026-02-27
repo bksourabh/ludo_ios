@@ -239,11 +239,13 @@ class TokenNode: SKNode {
         }
     }
 
-    /// Check if a point is within this token
+    /// Check if a point is within this token.
+    /// Uses a larger hit-radius (0.65× size) than the visual radius (0.4× size)
+    /// so that fat-finger taps on small tokens register reliably.
     func isPointInside(_ point: CGPoint) -> Bool {
         guard let parentNode = parent else { return false }
         let localPoint = convert(point, from: parentNode)
-        let radius = size * 0.4
-        return localPoint.x * localPoint.x + localPoint.y * localPoint.y <= radius * radius
+        let hitRadius = size * 0.65   // ~60 % larger than the visual circle
+        return localPoint.x * localPoint.x + localPoint.y * localPoint.y <= hitRadius * hitRadius
     }
 }

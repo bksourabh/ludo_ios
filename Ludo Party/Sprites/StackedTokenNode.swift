@@ -136,12 +136,13 @@ class StackedTokenNode: SKNode {
         currentGlowColor = nil
     }
 
-    /// Check if a point is within this stacked token
+    /// Check if a point is within this stacked token.
+    /// Uses a larger hit-radius (0.65×) than the visual radius (0.4×) for easier tapping.
     func isPointInside(_ point: CGPoint) -> Bool {
         guard let parentNode = parent else { return false }
         let localPoint = convert(point, from: parentNode)
-        let radius = size * 0.4
-        return localPoint.x * localPoint.x + localPoint.y * localPoint.y <= radius * radius
+        let hitRadius = size * 0.65
+        return localPoint.x * localPoint.x + localPoint.y * localPoint.y <= hitRadius * hitRadius
     }
 
     /// Get the token of a specific color from this stack
